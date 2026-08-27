@@ -1,6 +1,7 @@
 import { t } from '../../platform/i18n.js';
 import { toast } from '../../shared/toast.js';
 import { patchSyncSettings } from '../../platform/settings-repo.js';
+import { enhanceMacSelects, syncMacSelect } from './select.js';
 
 const CONTROL_TYPES = new Set(['toggle', 'select', 'slider']);
 
@@ -68,6 +69,7 @@ export class SettingsBuilder {
             .map((section) => this._renderSection(section))
             .join('');
         this.container.innerHTML = html;
+        enhanceMacSelects(this.container);
     }
 
     bind() {
@@ -355,6 +357,7 @@ export class SettingsBuilder {
         }
 
         control.value = String(value ?? '');
+        syncMacSelect(control);
     }
 
     _applySliderUi(row, value) {

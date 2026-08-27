@@ -6245,6 +6245,15 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     outline-offset: 1px;
 }
 
+.mac-select-input.is-enhanced {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
 .mac-select-arrow {
     position: absolute;
     right: var(--space-2);
@@ -6259,6 +6268,123 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
 .mac-select-arrow svg {
     width: 100%;
     height: 100%;
+}
+
+.mac-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: var(--mac-select-height);
+    padding: 0 12px 0 14px;
+    border: none;
+    border-radius: var(--mac-select-radius);
+    background: var(--mac-select-bg);
+    box-shadow: inset 0 0 0 0.5px var(--mac-divider-color);
+    color: var(--mac-text-primary);
+    font: inherit;
+    font-size: var(--mac-font-size-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--mac-transition-fast), box-shadow var(--mac-transition-fast);
+}
+
+.mac-select-trigger:hover:not(:disabled) {
+    background: var(--shadow-color-light);
+}
+
+[data-theme="dark"] .mac-select-trigger:hover:not(:disabled) {
+    background: var(--overlay-highlight);
+}
+
+.mac-select-trigger:focus-visible {
+    outline: 2px solid var(--mac-accent-color);
+    outline-offset: 1px;
+}
+
+.mac-select-trigger:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
+.mac-select-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mac-select-chevron {
+    display: flex;
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    color: var(--mac-text-secondary);
+    transition: transform var(--mac-transition-fast);
+}
+
+.mac-select-chevron svg {
+    width: 100%;
+    height: 100%;
+}
+
+.mac-select.is-open .mac-select-chevron {
+    transform: rotate(180deg);
+}
+
+.mac-select-menu {
+    position: absolute;
+    z-index: var(--z-context-menu);
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 100%;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px;
+    border-radius: calc(var(--mac-select-radius) + 4px);
+    background: color-mix(in srgb, var(--mac-select-bg) 92%, transparent);
+    box-shadow: var(--shadow-elevation-2), inset 0 0 0 0.5px var(--mac-divider-color);
+    backdrop-filter: blur(var(--blur-md));
+}
+
+.mac-select.is-open-upward .mac-select-menu {
+    top: auto;
+    bottom: calc(100% + 6px);
+}
+
+.mac-select-option {
+    display: block;
+    width: 100%;
+    min-height: 32px;
+    padding: 0 10px;
+    border: none;
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--mac-text-primary);
+    font: inherit;
+    font-size: var(--mac-font-size-sm);
+    text-align: left;
+    cursor: pointer;
+}
+
+.mac-select-option:hover:not(:disabled),
+.mac-select-option:focus-visible {
+    outline: none;
+    background: var(--shadow-color-light);
+}
+
+[data-theme="dark"] .mac-select-option:hover:not(:disabled),
+[data-theme="dark"] .mac-select-option:focus-visible {
+    background: var(--overlay-highlight);
+}
+
+.mac-select-option.is-selected {
+    background: var(--mac-accent-color);
+    color: #fff;
+}
+
+.mac-select-option:disabled {
+    cursor: default;
+    opacity: 0.5;
 }
 
 .mac-stepper {

@@ -10,6 +10,7 @@ import {
   patchBackgroundSettings as rawPatchBackgroundSettings,
   patchSyncSettings as rawPatchSyncSettings,
 } from "../../platform/settings-repo.js";
+import { enhanceMacSelects, syncMacSelect } from "./select.js";
 
 async function patchBackgroundSettings(patch) {
   try {
@@ -288,8 +289,11 @@ export function registerAppearanceContent(window) {
             </div>
         `;
 
+    enhanceMacSelects(container);
     _bindAppearanceEvents(container);
     _loadAppearanceSettings(container);
+
+    queueMicrotask(() => enhanceMacSelects(container));
 
     _activeAppearanceContainer = container;
     _ensureAppearanceGlobalListeners();
@@ -661,6 +665,7 @@ function _updateSourceUI(container, source) {
       autoRefreshSelect.value = "day";
     }
     autoRefreshSelect.disabled = isLegacyHiddenSource || isBingSource;
+    syncMacSelect(autoRefreshSelect);
   }
 }
 
@@ -683,6 +688,7 @@ async function _loadAppearanceSettings(container) {
       if (!LEGACY_HIDDEN_BACKGROUND_SOURCES.has(currentSource)) {
         bgSourceSelect.value = currentSource;
       }
+      syncMacSelect(bgSourceSelect);
       _updateSourceUI(container, currentSource);
     }
 
@@ -694,6 +700,7 @@ async function _loadAppearanceSettings(container) {
           BACKGROUND_APPEARANCE_DEFAULTS.frequency;
     if (autoRefreshSelect) {
       autoRefreshSelect.value = effectiveFrequency;
+      syncMacSelect(autoRefreshSelect);
     }
 
     _loadApiKeys(container, backgroundSettings.apiKeys || {});
