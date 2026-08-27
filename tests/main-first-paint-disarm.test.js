@@ -30,10 +30,6 @@ vi.mock('../scripts/domains/settings/window.js', () => ({
     initMacSettings: vi.fn(() => ({ toggle: vi.fn() }))
 }));
 
-vi.mock('../scripts/domains/changelog/index.js', () => ({
-    initChangelog: vi.fn(async () => {})
-}));
-
 describe('main first paint disarm timing', () => {
     let originalRaf;
     let rafQueue;

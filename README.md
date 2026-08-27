@@ -103,7 +103,6 @@ Aura-Tab/
 │   │   ├── quicklinks/     # Quick links & launchpad
 │   │   ├── settings/       # Settings window
 │   │   ├── bookmarks/      # Bookmark import/export
-│   │   └── changelog/      # Version changelog
 │   ├── platform/       # Platform abstractions
 │   └── shared/         # Shared utilities
 ├── tests/              # Test files (Vitest)
@@ -145,8 +144,6 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore:` Build process or auxiliary tool changes
 
 ## Changelog
-
-See [assets/changelog.json](assets/changelog.json) for detailed version history.
 
 ### Latest (v3.4)
 

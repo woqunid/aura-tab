@@ -73,18 +73,18 @@ describe('MacSettingsWindow', () => {
         const currentRender = createDeferred();
         const settingsWindow = await createSettingsWindow();
 
-        settingsWindow.registerContentRenderer('changelog', async (container) => {
+        settingsWindow.registerContentRenderer('appearance', async (container) => {
             await currentRender.promise;
-            container.innerHTML = '<div id="current-changelog-pane">Changelog</div>';
+            container.innerHTML = '<div id="current-appearance-pane">Appearance</div>';
         });
 
         settingsWindow.open();
-        settingsWindow._selectMenu('changelog');
+        settingsWindow._selectMenu('appearance');
 
         currentRender.resolve();
         await flushAsync();
 
-        expect(document.getElementById('current-changelog-pane')).toBeTruthy();
+        expect(document.getElementById('current-appearance-pane')).toBeTruthy();
 
         settingsWindow.destroy();
     });

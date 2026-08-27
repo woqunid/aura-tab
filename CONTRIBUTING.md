@@ -69,7 +69,6 @@ scripts/
 │   ├── quicklinks/     # 快速链接
 │   ├── settings/       # 设置窗口
 │   ├── bookmarks/      # 书签管理
-│   └── changelog/      # 更新日志
 ├── platform/       # 平台抽象层
 └── shared/         # 共享工具
 ```

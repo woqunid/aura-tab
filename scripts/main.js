@@ -5,7 +5,6 @@ import { initSearch } from './domains/search.js';
 import { initQuickLinks } from './domains/quicklinks/index.js';
 import { initHtmlI18n, initLanguage } from './platform/i18n.js';
 import { initMacSettings } from './domains/settings/window.js';
-import { initChangelog } from './domains/changelog/index.js';
 import { getSyncSettings } from './platform/settings-contract.js';
 
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
@@ -69,7 +68,6 @@ async function main() {
     await initLanguage();
     await initTheme();
     initHtmlI18n();
-    void initChangelog();
     void initBackgroundSystem().catch((error) => {
         console.error('[Aura Tab] background init failed:', error);
         disarmFirstPaint();

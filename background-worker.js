@@ -7,7 +7,6 @@ const DISCOVER_ICON_MESSAGE = 'discoverIcon';
 const OFFSCREEN_PARSE_PAGE_MESSAGE = 'faviconOffscreenParsePage';
 const OFFSCREEN_PARSE_MANIFEST_MESSAGE = 'faviconOffscreenParseManifest';
 const OFFSCREEN_INSPECT_IMAGE_MESSAGE = 'faviconOffscreenInspectImage';
-const SHOW_CHANGELOG_MESSAGE = 'showChangelog';
 const MAX_ICON_BYTES = 512 * 1024;
 const MAX_PAGE_BYTES = 512 * 1024;
 const FETCH_TIMEOUT_MS = 3000;
@@ -28,18 +27,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
                 await chrome.storage.sync.set({
                     backgroundSettings: createBackgroundSettingsDefaults()
                 });
-            }
-        }
-
-        // Trigger changelog notification broadcast after update
-        if (details.reason === 'update') {
-            try {
-                const version = chrome.runtime.getManifest()?.version || ''
-                await chrome.runtime.sendMessage({ type: SHOW_CHANGELOG_MESSAGE, version })
-            } catch (error) {
-                if (!isExpectedConnectionError(error)) {
-                    console.error('[SW] showChangelog broadcast error:', error);
-                }
             }
         }
     } catch (error) {

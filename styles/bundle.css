@@ -5948,55 +5948,6 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
     text-align: center;
 }
 
-.mac-about-links {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.mac-about-link-btn {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 40px;
-    padding: 8px 12px;
-    text-decoration: none;
-    color: var(--mac-text-primary);
-    font-size: var(--mac-font-size-md);
-    border-bottom: 0.5px solid var(--mac-divider-color);
-    transition: background var(--mac-transition-fast);
-}
-
-.mac-about-link-btn:last-child {
-    border-bottom: none;
-}
-
-.mac-about-link-btn:hover {
-    background: rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="dark"] .mac-about-link-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
-}
-
-
-.mac-about-link-icon {
-    display: block;
-    flex: 0 0 16px;
-    width: 16px;
-    height: 16px;
-    color: var(--mac-text-secondary);
-}
-
-.mac-about-link-btn span {
-    flex: 1;
-}
-
-.mac-about-link-arrow {
-    flex-shrink: 0;
-    color: var(--mac-text-tertiary);
-}
-
 .mac-keycap {
     display: inline-flex;
     align-items: center;

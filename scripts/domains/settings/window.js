@@ -1,6 +1,6 @@
 import { MacWindowBase } from '../../platform/mac-window-base.js';
 import { t, initHtmlI18n } from '../../platform/i18n.js';
-import { registerGeneralContent, registerAboutContent, registerChangelogContent } from './content-core.js';
+import { registerGeneralContent, registerAboutContent } from './content-core.js';
 import { registerAppearanceContent } from './content-appearance.js';
 import { registerDockContent } from './content-dock.js';
 import { registerDataContent } from './content-data.js';
@@ -55,14 +55,6 @@ const MENU_ITEMS = [
             <line x1="12" y1="8" x2="12.01" y2="8"/>
         </svg>`,
         labelKey: 'macSettingsAbout'
-    },
-    {
-        key: 'changelog',
-        icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-        </svg>`,
-        labelKey: 'macSettingsChangelog'
     }
 ];
 
@@ -306,6 +298,5 @@ export function initMacSettings() {
     registerDockContent(window);
     registerDataContent(window);
     registerAboutContent(window);
-    registerChangelogContent(window);
     return window;
 }

@@ -29,7 +29,6 @@ zip -r "$OUTPUT_FILE" \
     _locales \
     assets/backgrounds \
     assets/icons \
-    assets/changelog.json \
     -x "*.DS_Store" \
     -x "**/.DS_Store"
 

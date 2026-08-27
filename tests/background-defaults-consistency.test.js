@@ -55,7 +55,6 @@ async function loadWorker() {
             onMessage: {
                 addListener: vi.fn()
             },
-            getManifest: vi.fn(() => ({ version: '3.0.0' })),
             sendMessage: vi.fn(async () => {})
         },
         alarms: {
@@ -111,12 +110,13 @@ describe('background-defaults-consistency', () => {
         expect(mocks.syncSet).not.toHaveBeenCalled();
     });
 
-    it('update should not touch the removed toolbar icon state', async () => {
+    it('update should not notify pages or touch the removed toolbar icon state', async () => {
         mocks.syncGet.mockResolvedValue({ backgroundSettings: undefined });
 
         const listeners = await loadWorker();
         await listeners.onInstalled({ reason: 'update' });
 
+        expect(global.chrome.runtime.sendMessage).not.toHaveBeenCalled();
         expect(mocks.restoreToolbarIcon).not.toHaveBeenCalled();
     });
 
