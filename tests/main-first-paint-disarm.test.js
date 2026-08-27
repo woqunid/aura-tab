@@ -30,12 +30,6 @@ vi.mock('../scripts/domains/settings/window.js', () => ({
     initMacSettings: vi.fn(() => ({ toggle: vi.fn() }))
 }));
 
-vi.mock('../scripts/domains/backgrounds/library-store.js', () => ({
-    libraryStore: {
-        init: vi.fn(async () => {})
-    }
-}));
-
 vi.mock('../scripts/domains/changelog/index.js', () => ({
     initChangelog: vi.fn(async () => {})
 }));

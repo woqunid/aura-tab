@@ -32,12 +32,7 @@ export class LayoutManager extends DisposableComponent {
         this.photoAuthor = document.getElementById('photoAuthor');
         this.authorName = document.getElementById('authorName');
         this.downloadBgBtn = document.getElementById('downloadBgBtn');
-        this.favoriteBgBtn = document.getElementById('favoriteBgBtn');
-        this.favoriteIconEmpty = this.favoriteBgBtn?.querySelector('.favorite-icon-empty');
-        this.favoriteIconFilled = this.favoriteBgBtn?.querySelector('.favorite-icon-filled');
-
         this._isDownloading = false;
-        this._isFavoriting = false;
         this._photoInfoUpdateGeneration = 0;
         this._storageChangeHandler = null;
         this._shortcuts = resolveShortcutSettings({
@@ -66,10 +61,6 @@ export class LayoutManager extends DisposableComponent {
             this._events.add(this.downloadBgBtn, 'click', () => this._handleDownloadBackground());
         }
 
-        if (this.favoriteBgBtn) {
-            this._events.add(this.favoriteBgBtn, 'click', () => this._handleToggleFavorite());
-        }
-
         this._events.add(document, 'keydown', (e) => this._handleKeydown(e));
 
         this._events.add(window, 'background:applied', (event) => {
@@ -87,14 +78,6 @@ export class LayoutManager extends DisposableComponent {
         await this.initAllVisibilitySettings();
 
         this._storageChangeHandler = (changes, areaName) => {
-            if (areaName === 'local' && changes.libraryItems) {
-                const currentBg = this.backgroundSystem?.getCurrentBackground?.();
-                if (currentBg?.id) {
-                    void this._updateFavoriteButtonState(currentBg);
-                }
-                return;
-            }
-
             if (areaName !== 'sync') return;
 
             if (changes.showSearchBtn && this.cornerBottomRight) {
@@ -257,7 +240,6 @@ export class LayoutManager extends DisposableComponent {
                 }
                 this.photoInfo?.classList.remove('hidden');
 
-                await this._updateFavoriteButtonState(currentBg, generation);
             } else {
                 if (this.authorName) this.authorName.textContent = '';
                 this.photoInfo?.classList.add('hidden');
@@ -269,32 +251,6 @@ export class LayoutManager extends DisposableComponent {
             logWithDedup('warn', '[LayoutManager] Failed to update photo info:', error, {
                 dedupeKey: 'layout.photo-info.update'
             });
-        }
-    }
-
-    async _updateFavoriteButtonState(currentBg, generation = this._photoInfoUpdateGeneration) {
-        if (!this.favoriteBgBtn || !this.favoriteIconEmpty || !this.favoriteIconFilled) {
-            return;
-        }
-
-        try {
-            const { libraryStore } = await import('./backgrounds/library-store.js');
-            await libraryStore.init();
-            if (generation !== this._photoInfoUpdateGeneration) return;
-
-            const isFavorited = currentBg?.id && libraryStore.has(currentBg.id);
-
-            if (isFavorited) {
-                this.favoriteIconEmpty.classList.add('hidden');
-                this.favoriteIconFilled.classList.remove('hidden');
-                this.favoriteBgBtn.classList.add('is-favorited');
-            } else {
-                this.favoriteIconEmpty.classList.remove('hidden');
-                this.favoriteIconFilled.classList.add('hidden');
-                this.favoriteBgBtn.classList.remove('is-favorited');
-            }
-        } catch (error) {
-            console.warn('[LayoutManager] Failed to update favorite state:', error);
         }
     }
 
@@ -364,98 +320,6 @@ export class LayoutManager extends DisposableComponent {
         } finally {
             this._isDownloading = false;
             this.downloadBgBtn?.classList.remove('downloading');
-        }
-    }
-
-    async _handleToggleFavorite() {
-        if (!this.favoriteBgBtn || this._isFavoriting) return;
-
-        this._isFavoriting = true;
-        this.favoriteBgBtn.classList.add('favoriting');
-
-        try {
-            if (!this.backgroundSystem) {
-                throw new Error('No background system');
-            }
-
-            if (typeof this.backgroundSystem.whenReady === 'function') {
-                await Promise.race([
-                    this.backgroundSystem.whenReady(),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 10000))
-                ]);
-            }
-
-            const currentBg = this.backgroundSystem.getCurrentBackground?.();
-            if (!currentBg?.id) {
-                const { toast } = await import('../shared/toast.js');
-                const { t } = await import('../platform/i18n.js');
-                toast(t('noImagesDownload')); // Reuse "no images" toast message
-                return;
-            }
-
-            const { libraryStore } = await import('./backgrounds/library-store.js');
-            await libraryStore.init();
-
-            const { toast } = await import('../shared/toast.js');
-            const { t } = await import('../platform/i18n.js');
-
-            const isFavorited = libraryStore.has(currentBg.id);
-
-            if (isFavorited) {
-                const snapshot = libraryStore.get(currentBg.id);
-                await libraryStore.remove(currentBg.id);
-                toast(t('photosUnfavorited'), {
-                    action: {
-                        label: t('photosUndo') || 'Undo',
-                        onClick: async () => {
-                            if (!snapshot) return;
-                            const ok = await libraryStore.upsert(snapshot);
-                            if (ok && snapshot?.kind === 'remote' && snapshot?.downloadState === 'pending') {
-                                await libraryStore.enqueueDownload(snapshot.id);
-                            }
-
-                            const stillCurrent = this.backgroundSystem?.getCurrentBackground?.();
-                            if (stillCurrent?.id === currentBg.id) {
-                                await this._updateFavoriteButtonState(stillCurrent);
-                            }
-
-                            toast(t('photosFavorited'));
-                        }
-                    }
-                });
-            } else {
-                if (libraryStore.count() >= 5000) {
-                    toast(t('photosFavoriteMaxReached'));
-                    return;
-                }
-
-                const bgSettings = await getSyncSettings({ backgroundSettings: undefined });
-                const provider = bgSettings.backgroundSettings?.type || 'files';
-
-                const thumbParamsByProvider = {
-                    unsplash: '?w=300&q=70&auto=format',
-                    pexels: '?auto=compress&cs=tinysrgb&fit=max&w=600&q=85&fm=webp'
-                };
-                const thumbParams = thumbParamsByProvider[provider] || '';
-
-                const isFiles = provider === 'files' || currentBg.file || String(currentBg.urls?.full || '').startsWith('blob:');
-                const success = isFiles
-                    ? await libraryStore.addLocalFavoriteFromBackground(currentBg)
-                    : await libraryStore.addRemoteFavoriteFromBackground(currentBg, { provider, thumbParams });
-
-                if (success) toast(t('photosFavorited'));
-            }
-
-            await this._updateFavoriteButtonState(currentBg);
-
-        } catch (error) {
-            console.error('[LayoutManager] Toggle favorite failed:', error);
-            const { toast } = await import('../shared/toast.js');
-            const { t } = await import('../platform/i18n.js');
-            toast(t('unknownError'));
-        } finally {
-            this._isFavoriting = false;
-            this.favoriteBgBtn?.classList.remove('favoriting');
         }
     }
 

@@ -6,7 +6,6 @@
     <title>New Tab</title>
     <script src="scripts/boot/first-paint.js"></script>
     <link rel="stylesheet" href="styles/bundle.css">
-    <link rel="stylesheet" href="styles/photos.css">
 </head>
 
 <body>
@@ -82,11 +81,6 @@
     <div class="mac-window-overlay" id="macSettingsOverlay" data-modal="true" role="dialog"
         aria-modal="true" aria-labelledby="macSettingsTitle" aria-hidden="true">
         <div class="mac-window" id="macSettingsWindow">
-        </div>
-    </div>
-    <div class="mac-window-overlay" id="photosOverlay" data-modal="true" role="dialog" aria-modal="true"
-        aria-labelledby="photosTitle" aria-hidden="true">
-        <div class="mac-window photos-window" id="photosWindow">
         </div>
     </div>
     <div class="engine-switcher-overlay" id="engineSwitcherOverlay" data-modal="true" role="dialog" aria-modal="true"
@@ -212,19 +206,6 @@
                 <span class="author-prefix" data-i18n="photoByPrefix"></span><span class="author-name"
                     id="authorName"></span>
             </a>
-            <button class="favorite-bg-btn" id="favoriteBgBtn" data-i18n="ariaFavorite" data-i18n-attr="aria-label"
-                aria-label="" tabindex="-1">
-                <svg aria-hidden="true" class="favorite-icon-empty" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                </svg>
-                <svg aria-hidden="true" class="favorite-icon-filled hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
-                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path
-                        d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                </svg>
-            </button>
             <button class="download-bg-btn" id="downloadBgBtn" data-i18n="ariaDownloadBg" data-i18n-attr="aria-label"
                 aria-label="" tabindex="-1">
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"

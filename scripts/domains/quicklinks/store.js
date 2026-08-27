@@ -137,8 +137,7 @@ export function dedupeStoreEntries(entries, pageBreak) {
     return out;
 }
 const SETTINGS_ITEM_ID = '__SYSTEM_SETTINGS__';
-const PHOTOS_ITEM_ID = '__SYSTEM_PHOTOS__';
-const SYSTEM_ITEM_IDS = new Set([SETTINGS_ITEM_ID, PHOTOS_ITEM_ID]);
+const SYSTEM_ITEM_IDS = new Set([SETTINGS_ITEM_ID]);
 const STORE_ERROR_CODES = Object.freeze({
     SYNC_QUOTA_EXCEEDED: 'SYNC_QUOTA_EXCEEDED',
     SYNC_QUOTA_PRECHECK_FAILED: 'SYNC_QUOTA_PRECHECK_FAILED',
@@ -1063,7 +1062,7 @@ class Store {
     async _initializeLatestSchema() {
         const revision = this._generateStorageRevision();
         this._lastLocalStorageRevision = revision;
-        const defaultItems = [PHOTOS_ITEM_ID, SETTINGS_ITEM_ID];
+        const defaultItems = [SETTINGS_ITEM_ID];
         const setId = this._generateChunkSetId();
         const indexKey = this._chunkSetIndexKey(setId);
         await chrome.storage.sync.set({
@@ -1149,7 +1148,6 @@ class Store {
     getItem(id) {
         if (!id) return null;
         if (id === SETTINGS_ITEM_ID) return this._getSettingsItem();
-        if (id === PHOTOS_ITEM_ID) return this._getPhotosItem();
         // First try top-level pages, then fallback to cache (folder children)
         return this.getAllItems().find(item => item?._id === id)
             ?? this._itemsCache.get(id)
@@ -1166,20 +1164,8 @@ class Store {
             tags: []
         };
     }
-    _getPhotosItem() {
-        return {
-            _id: PHOTOS_ITEM_ID,
-            title: t('photos'),
-            isSystemItem: true,
-            icon: 'assets/icons/photo.jpg',
-            url: '', // Dummy URL, handled via click event
-            createdAt: 0,
-            tags: []
-        };
-    }
     _getSystemItem(id) {
         if (id === SETTINGS_ITEM_ID) return this._getSettingsItem();
-        if (id === PHOTOS_ITEM_ID) return this._getPhotosItem();
         return {
             _id: String(id),
             title: String(id),

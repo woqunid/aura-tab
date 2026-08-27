@@ -23,7 +23,7 @@ describe('StorageListenerManager singleton bus', () => {
         expect(chrome.storage.onChanged._listeners).toHaveLength(1);
 
         triggerStorageChange({
-            libraryItems: {
+            sampleSetting: {
                 oldValue: {},
                 newValue: { id_1: { id: 'id_1' } }
             }

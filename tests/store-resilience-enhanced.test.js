@@ -56,7 +56,6 @@ function seedV6Items(items, extras = {}) {
 
 describe('Store latest-only schema', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
-    const PHOTOS_ID = '__SYSTEM_PHOTOS__';
 
     it('v6_data_unchanged_on_init', async () => {
         const id1 = 'qlink_keep';
@@ -67,8 +66,8 @@ describe('Store latest-only schema', () => {
 
         const persisted = getStorageData('sync');
         expect(persisted.storageVersion).toBe(6);
-        expect(persisted.quicklinksItems).toEqual([PHOTOS_ID, SETTINGS_ID, id1]);
-        expect(store.getAllItems().map((x) => x._id)).toEqual([PHOTOS_ID, SETTINGS_ID, id1]);
+        expect(persisted.quicklinksItems).toEqual([SETTINGS_ID, id1]);
+        expect(store.getAllItems().map((x) => x._id)).toEqual([SETTINGS_ID, id1]);
 
         store.destroy?.();
     });
@@ -109,7 +108,7 @@ describe('Storage change handling', () => {
         const nextSet = createChunkSet([id1, id2], 'seedset_external_new');
         const newData = {
             ...getStorageData('sync'),
-            quicklinksItems: ['__SYSTEM_PHOTOS__', '__SYSTEM_SETTINGS__', id1, id2],
+            quicklinksItems: ['__REMOVED_SYSTEM_ITEM__', '__SYSTEM_SETTINGS__', id1, id2],
             quicklinksActiveSet: nextSet.setId,
             [nextSet.indexKey]: [nextSet.chunkKey],
             [nextSet.chunkKey]: nextSet.chunk,
@@ -125,6 +124,7 @@ describe('Storage change handling', () => {
 
         await new Promise((r) => setTimeout(r, 120));
         expect(store.getAllItems().map((x) => x._id)).toContain(id2);
+        expect(store.getAllItems().map((x) => x._id)).not.toContain('__REMOVED_SYSTEM_ITEM__');
 
         store.destroy?.();
     });
@@ -205,7 +205,6 @@ describe('Storage change handling', () => {
 
 describe('Dock pin snapshot validation', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
-    const PHOTOS_ID = '__SYSTEM_PHOTOS__';
 
     it('keeps dock reads free of persistence side effects', async () => {
         const store = await freshStore();
@@ -244,7 +243,7 @@ describe('Dock pin snapshot validation', () => {
 
         setStorageData({
             storageVersion: 6,
-            quicklinksItems: [PHOTOS_ID, SETTINGS_ID, folderId],
+            quicklinksItems: [SETTINGS_ID, folderId],
             quicklinksDockPins: [],
             quicklinksTags: [],
             quicklinksRevision: 'seed-pin-snapshot-ok',
@@ -289,7 +288,7 @@ describe('Dock pin snapshot validation', () => {
 
         setStorageData({
             storageVersion: 6,
-            quicklinksItems: [PHOTOS_ID, SETTINGS_ID, folderId],
+            quicklinksItems: [SETTINGS_ID, folderId],
             quicklinksDockPins: [],
             quicklinksTags: [],
             quicklinksRevision: 'seed-pin-snapshot-stale-old',
@@ -322,7 +321,7 @@ describe('Dock pin snapshot validation', () => {
         const newIndexKey = `quicklinksChunkSet_${newSetId}_index`;
         setStorageData({
             storageVersion: 6,
-            quicklinksItems: [PHOTOS_ID, SETTINGS_ID],
+            quicklinksItems: [SETTINGS_ID],
             quicklinksDockPins: [],
             quicklinksTags: [],
             quicklinksRevision: 'seed-pin-snapshot-stale-new',
@@ -342,7 +341,6 @@ describe('Dock pin snapshot validation', () => {
 
 describe('Undo restore', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
-    const PHOTOS_ID = '__SYSTEM_PHOTOS__';
 
     beforeEach(() => resetMocks());
 
@@ -350,7 +348,7 @@ describe('Undo restore', () => {
         const a = 'qlink_a';
         const b = 'qlink_b';
         const c = 'qlink_c';
-        seedV6Items([PHOTOS_ID, SETTINGS_ID, a, b, c], { dockPins: [b, a], setId: 'seedset_restore' });
+        seedV6Items([SETTINGS_ID, a, b, c], { dockPins: [b, a], setId: 'seedset_restore' });
 
         const store = await freshStore();
         await store.init();
@@ -365,7 +363,7 @@ describe('Undo restore', () => {
 
         expect(store.getItem(b)?._id).toBe(b);
         expect(store.dockPins.slice(0, 2)).toEqual([b, a]);
-        expect(store.getAllItems().map((x) => x._id)).toEqual([PHOTOS_ID, SETTINGS_ID, a, b, c]);
+        expect(store.getAllItems().map((x) => x._id)).toEqual([SETTINGS_ID, a, b, c]);
 
         store.destroy?.();
     });
@@ -373,7 +371,6 @@ describe('Undo restore', () => {
 
 describe('Grid density and commit retry', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
-    const PHOTOS_ID = '__SYSTEM_PHOTOS__';
 
     it('should sync pageSizeHint with grid density on init', async () => {
         seedV6Items(['qlink_1', 'qlink_2', 'qlink_3'], {
@@ -387,7 +384,7 @@ describe('Grid density and commit retry', () => {
 
         const pages = store.getPages(6);
         expect(pages.length).toBe(1);
-        expect(pages[0].length).toBe(5);
+        expect(pages[0].length).toBe(4);
 
         store.destroy?.();
     });
@@ -415,7 +412,7 @@ describe('Grid density and commit retry', () => {
     });
 
     it('should retry on QUOTA_BYTES error and succeed', async () => {
-        seedV6Items([PHOTOS_ID, SETTINGS_ID, 'qlink_1'], { setId: 'seedset_retry' });
+        seedV6Items([SETTINGS_ID, 'qlink_1'], { setId: 'seedset_retry' });
 
         const store = await freshStore();
         await store.init();
@@ -436,14 +433,14 @@ describe('Grid density and commit retry', () => {
             url: 'https://new.com'
         });
 
-        expect(store.getAllItems().length).toBe(4);
+        expect(store.getAllItems().length).toBe(3);
         expect(setCallCount).toBeGreaterThanOrEqual(2);
 
         store.destroy?.();
     });
 
     it('should retry when pointer commit fails on quicklinksActiveSet write', async () => {
-        seedV6Items([PHOTOS_ID, SETTINGS_ID, 'qlink_pointer_retry'], { setId: 'seedset_pointer_retry' });
+        seedV6Items([SETTINGS_ID, 'qlink_pointer_retry'], { setId: 'seedset_pointer_retry' });
 
         const store = await freshStore();
         await store.init();

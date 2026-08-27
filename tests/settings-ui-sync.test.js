@@ -156,13 +156,12 @@ describe('settings UI Safari sync', () => {
 
         expect(container.querySelector('.data-page-layout')).toBeTruthy();
         expect(container.querySelector('.data-settings-section--manager')).toBeTruthy();
-        expect(container.querySelector('.data-settings-section--local')).toBeTruthy();
         expect(container.querySelector('.data-settings-section--bookmarks')).toBeTruthy();
-        expect(container.querySelector('.data-settings-section--cloud')).toBeTruthy();
+        expect(container.querySelector('.data-settings-section--local')).toBeNull();
+        expect(container.querySelector('.data-settings-section--cloud')).toBeNull();
         expect(container.querySelector('#macExportLinks')).toBeTruthy();
         expect(container.querySelector('#macImportBookmarks')).toBeTruthy();
-        expect(container.querySelectorAll('.mac-button-group--fixed')).toHaveLength(3);
-        expect(container.querySelector('[data-i18n="webdavCredentialsLocalHint"]')).toBeTruthy();
+        expect(container.querySelectorAll('.mac-button-group--fixed')).toHaveLength(1);
         expect(container.querySelector('[data-i18n="settingsPrivacySection"]')).toBeNull();
         expect(container.querySelector('[data-i18n="settingsPrivacyText"]')).toBeNull();
     });

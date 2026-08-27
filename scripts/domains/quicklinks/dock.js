@@ -824,14 +824,6 @@ class Dock extends DisposableComponent {
             });
             return;
         }
-        if (item._id === '__SYSTEM_PHOTOS__') {
-            import('../photos/window.js').then(m => {
-                m.photosWindow?.open();
-            }).catch(err => {
-                console.error('[Dock] Failed to open Photos:', err);
-            });
-            return;
-        }
         const safeUrl = store.getSafeUrl(item.url);
         if (!safeUrl) {
             console.warn('[Dock] Blocked potentially unsafe URL:', item.url);

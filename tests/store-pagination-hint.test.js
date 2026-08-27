@@ -53,7 +53,6 @@ function seedItems(count) {
 
 describe('Store pageSizeHint + reorderFromDom', () => {
     const SETTINGS_ID = '__SYSTEM_SETTINGS__';
-    const PHOTOS_ID = '__SYSTEM_PHOTOS__';
 
     it('should use pageSizeHint to avoid incorrect re-pagination', async () => {
         const ids = seedItems(30);
@@ -64,24 +63,24 @@ describe('Store pageSizeHint + reorderFromDom', () => {
         // Default is 24 => splits into 2 pages (30 > 24)
         expect(store.getPageCount()).toBe(2);
         expect(store.getPage(0).length).toBe(24);
-        expect(store.getPage(1).length).toBe(8);  // 30 + 2 system items - 24 = 8
+        expect(store.getPage(1).length).toBe(7);  // 30 + 1 system item - 24 = 7
 
         // Simulate Launchpad grid capacity 36
         store.setPageSizeHint(36);
         expect(store.getPageCount()).toBe(1);
-        expect(store.getPage(0).length).toBe(32);  // 30 + 2 system items
+        expect(store.getPage(0).length).toBe(31);  // 30 + 1 system item
 
         // Simulate DOM after user dragged everything into page 1
         // (and there is an empty trailing ghost page)
-        await store.reorderFromDom([[PHOTOS_ID, SETTINGS_ID, ...ids], []], { silent: true });
+        await store.reorderFromDom([[SETTINGS_ID, ...ids], []], { silent: true });
 
         // Should not persist a trailing PAGE_BREAK / empty page
         const persisted = getStorageData('sync');
-        expect(persisted.quicklinksItems).toEqual([PHOTOS_ID, SETTINGS_ID, ...ids]);
+        expect(persisted.quicklinksItems).toEqual([SETTINGS_ID, ...ids]);
 
         // With correct hint, should remain one page
         expect(store.getPageCount()).toBe(1);
-        expect(store.getPage(0).map(x => x._id)).toEqual([PHOTOS_ID, SETTINGS_ID, ...ids]);
+        expect(store.getPage(0).map(x => x._id)).toEqual([SETTINGS_ID, ...ids]);
     });
 
     it('addItem(pageIndex) should append into that page (not global tail)', async () => {
@@ -105,7 +104,7 @@ describe('Store pageSizeHint + reorderFromDom', () => {
         await store.init();
 
         expect(store.getPageCount()).toBe(3);
-        expect(store.getPage(0).length).toBe(6);  // 4 + 2 system items
+        expect(store.getPage(0).length).toBe(5);  // 4 + 1 system item
         expect(store.getPage(2).length).toBe(2);
 
         // Add item into page 0, at end of that page

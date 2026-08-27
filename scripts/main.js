@@ -5,7 +5,6 @@ import { initSearch } from './domains/search.js';
 import { initQuickLinks } from './domains/quicklinks/index.js';
 import { initHtmlI18n, initLanguage } from './platform/i18n.js';
 import { initMacSettings } from './domains/settings/window.js';
-import { libraryStore } from './domains/backgrounds/library-store.js';
 import { initChangelog } from './domains/changelog/index.js';
 import { getSyncSettings } from './platform/settings-contract.js';
 
@@ -90,7 +89,6 @@ async function main() {
     schedule(() => {
         void (async () => {
             await initQuickLinks();
-            void libraryStore.init().catch(() => {});
             const macWindow = initMacSettings();
             const settingsBtn = document.getElementById('settingsBtn');
             settingsBtn?.addEventListener('click', (e) => {

@@ -745,15 +745,6 @@ class Launchpad {
             return;
         }
 
-        if (item?._id === '__SYSTEM_PHOTOS__') {
-            import('../photos/window.js').then((m) => {
-                m.photosWindow?.open();
-            }).catch((err) => {
-                console.error('[Launchpad] Failed to open Photos:', err);
-            });
-            this.close();
-            return;
-        }
 
         const safeUrl = store.getSafeUrl(item.url);
         if (!safeUrl) {

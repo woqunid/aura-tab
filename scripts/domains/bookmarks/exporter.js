@@ -24,7 +24,7 @@ const CONFIG = {
 
 class LinkExporter {
     /**
-     * Export as JSON format (full backup)
+     * Export as JSON format (complete link export)
      * Includes pagination structure, metadata, Dock pins
      * @returns {string} JSON string
      */

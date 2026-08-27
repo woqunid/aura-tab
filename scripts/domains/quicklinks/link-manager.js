@@ -151,13 +151,13 @@ export class LinkManagerComponent {
                 <!-- Pagination Footer -->
                 <div class="link-manager-footer">
                     <div class="link-manager-pagination">
-                        <button type="button" class="mac-icon-button pagination-prev" title="${t('photosPrev') || 'Previous'}" disabled>
+                        <button type="button" class="mac-icon-button pagination-prev" title="${t('previousPage') || 'Previous'}" disabled>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="15 18 9 12 15 6"></polyline>
                             </svg>
                         </button>
                         <span class="pagination-info"></span>
-                        <button type="button" class="mac-icon-button pagination-next" title="${t('photosNext') || 'Next'}" disabled>
+                        <button type="button" class="mac-icon-button pagination-next" title="${t('nextPage') || 'Next'}" disabled>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>

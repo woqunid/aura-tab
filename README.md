@@ -5,7 +5,7 @@
 [![Version](https://img.shields.io/badge/version-3.5.3-blue.svg)](https://github.com/nil-byte/aura-tab/releases)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-brightgreen)](https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja)
 
-A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds, quick links management, and immersive photo viewing.
+A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backgrounds and quick links management.
 
 [English](#features) | [中文](#功能特性)
 
@@ -21,8 +21,7 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 - 🌐 **i18n Support**: Full Chinese (Simplified/Traditional) and English localization
 - ⚡ **Performance First**: First Paint optimization, background caching with TTL, lazy loading
 - 📱 **Responsive Design**: Adapts to different screen sizes, densities, and orientations
-- 🔒 **Privacy Focused**: WebDAV backup support for Nutstore, Synology NAS, etc., no data collection
-- 🖼️ **Immersive Photo Viewer**: Fullscreen browsing with keyboard navigation and EXIF display
+- 🔒 **Privacy Focused**: No data collection
 - ⚙️ **Flexible Settings**: Background blur effects, clock styles, search engine customization
 - 📦 **Launchpad Mode**: macOS-style application launcher with folder organization
 - 🔄 **Auto-refresh**: Configurable background refresh with warmup cache strategy
@@ -44,10 +43,6 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 ### Settings Window
 
 ![Settings](assets/other/setting.jpg)
-
-### Photo Viewer
-
-![Photo Viewer](assets/other/photo.jpg)
 
 ### More Features
 
@@ -108,7 +103,6 @@ Aura-Tab/
 │   │   ├── quicklinks/     # Quick links & launchpad
 │   │   ├── settings/       # Settings window
 │   │   ├── bookmarks/      # Bookmark import/export
-│   │   ├── photos/         # Immersive photo viewer
 │   │   └── changelog/      # Version changelog
 │   ├── platform/       # Platform abstractions
 │   └── shared/         # Shared utilities
@@ -158,10 +152,8 @@ See [assets/changelog.json](assets/changelog.json) for detailed version history.
 
 - Background System: Multi-source support, smart cropping, smooth transitions
 - Quick Links: Folder support, drag-and-drop, search, bookmark import
-- Photo Viewer: Immersive fullscreen experience
 - i18n: Full Chinese and English localization
 - Toolbar Customization: Custom icon support
-- WebDAV Backup: Privacy-focused data backup
 
 ## License
 
@@ -173,7 +165,6 @@ This project uses the following open-source libraries:
 
 - [Interact.js](https://interactjs.io) - Drag and drop, resizing and multi-touch gestures
 - [SortableJS](https://sortablejs.github.io/Sortable) - Reorderable drag-and-drop lists
-- [fflate](https://github.com/101arrowz/fflate) - High performance compression library
 
 Background image sources:
 
@@ -194,8 +185,7 @@ Background image sources:
 - ⚡ **性能优先**：首屏优化、背景缓存、TTL 管理、懒加载
 - 🎭 **工具栏图标定制**：上传并应用自定义图标，实时预览
 - 📱 **响应式设计**：适配不同屏幕尺寸、密度和方向
-- 🔒 **隐私保护**：支持 WebDAV 备份（坚果云、群晖等），不收集任何数据
-- 🖼️ **沉浸式照片查看器**：全屏浏览、键盘导航、EXIF 信息显示
+- 🔒 **隐私保护**：不收集任何数据
 - ⚙️ **灵活设置**：背景模糊效果、时钟样式、搜索引擎自定义
 - 📦 **启动台模式**：macOS 风格的应用启动器，支持文件夹组织
 - 🔄 **自动刷新**：可配置的背景刷新，预热缓存策略

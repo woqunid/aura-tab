@@ -33,7 +33,6 @@ The following are in scope:
 - Data leakage through the extension's storage
 - Privilege escalation via Chrome Extension APIs
 - Insecure network requests (e.g., mixed content)
-- WebDAV credential handling issues
 
 The following are out of scope:
 
@@ -50,4 +49,4 @@ Aura Tab follows these security practices:
 - **Input sanitization**: All user input is escaped via `escapeHtml()` before DOM insertion
 - **No remote code execution**: `script-src 'self'` prevents inline scripts
 - **Minimal permissions**: Only necessary Chrome APIs are requested
-- **Local-first data**: All data stored locally; WebDAV sync is opt-in
+- **Local-first data**: All data is stored locally in the browser
