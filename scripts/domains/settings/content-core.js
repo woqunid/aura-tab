@@ -104,6 +104,13 @@ export function registerGeneralContent(window) {
                         },
                         {
                             type: 'toggle',
+                            id: 'macShowClock',
+                            labelKey: 'settingsUiShowClock',
+                            storageKey: 'showClock',
+                            defaultValue: SYNC_SETTINGS_DEFAULTS.showClock
+                        },
+                        {
+                            type: 'toggle',
                             id: 'macShowSeconds',
                             labelKey: 'settingsClockShowSeconds',
                             storageKey: 'showSeconds',

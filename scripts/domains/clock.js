@@ -3,6 +3,7 @@ import { SYNC_SETTINGS_DEFAULTS, getSyncSettings } from '../platform/settings-co
 const DEFAULTS = {
     clockFormat: SYNC_SETTINGS_DEFAULTS.clockFormat,
     dateFormat: SYNC_SETTINGS_DEFAULTS.dateFormat,
+    showClock: SYNC_SETTINGS_DEFAULTS.showClock,
     showSeconds: SYNC_SETTINGS_DEFAULTS.showSeconds
 };
 
@@ -47,6 +48,10 @@ function syncToggles() {
     }
 }
 
+function syncVisibility() {
+    clockState.containerElement?.classList.toggle('hidden', !clockState.settings.showClock);
+}
+
 function scheduleNextTick() {
     clearTimeout(clockState.tickTimer);
 
@@ -87,13 +92,14 @@ function handleStorageChange(changes, areaName) {
     if (areaName !== 'sync') return;
 
     let changed = false;
-    for (const key of ['clockFormat', 'dateFormat', 'showSeconds']) {
+    for (const key of ['clockFormat', 'dateFormat', 'showClock', 'showSeconds']) {
         if (!(key in changes)) continue;
         clockState.settings[key] = changes[key].newValue ?? DEFAULTS[key];
         changed = true;
     }
 
     if (changed) {
+        syncVisibility();
         updateClock();
         syncToggles();
         scheduleNextTick();
@@ -118,12 +124,14 @@ export async function initClock() {
 
     clockState = {
         controller,
+        containerElement: clockElement.closest('.clock-container'),
         clockElement,
         dateElement,
         settings,
         tickTimer: null
     };
 
+    syncVisibility();
     updateClock();
     syncToggles();
     scheduleNextTick();

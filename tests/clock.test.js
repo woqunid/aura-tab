@@ -6,11 +6,33 @@ describe('clock', () => {
         vi.resetModules();
         resetMocks();
         document.body.innerHTML = `
-            <div id="clock"></div>
-            <div id="date"></div>
+            <div class="clock-container">
+                <div id="clock"></div>
+                <div id="date"></div>
+            </div>
             <input id="timeFormatToggle" type="checkbox">
             <input id="showSeconds" type="checkbox">
         `;
+    });
+
+    it('shows or hides the clock when the sync setting changes', async () => {
+        setStorageData({ showClock: false }, 'sync');
+
+        const { initClock } = await import('../scripts/domains/clock.js');
+        const state = await initClock();
+
+        try {
+            const container = document.querySelector('.clock-container');
+            expect(container.classList.contains('hidden')).toBe(true);
+
+            triggerStorageChange({
+                showClock: { oldValue: false, newValue: true }
+            }, 'sync');
+
+            expect(container.classList.contains('hidden')).toBe(false);
+        } finally {
+            state.destroy();
+        }
     });
 
     it('does not commit local state when sync write fails', async () => {

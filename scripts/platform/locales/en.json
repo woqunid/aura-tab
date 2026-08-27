@@ -158,6 +158,7 @@
     "settingsUiSection": "Interface Settings",
     "settingsUiShowSearchBtn": "Always show search button",
     "settingsUiShowRefreshBtn": "Always show refresh button",
+    "settingsUiShowClock": "Show time",
     "settingsUiShowPhotoInfo": "Always show photo info",
     "settingsUiLaunchpadShowNames": "Show app names in Launchpad",
     "settingsUiCloseSettingsOnOutsideClick": "Click outside to close windows",

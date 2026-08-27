@@ -33,6 +33,7 @@ export function createBackgroundSettingsDefaults(overrides = {}) {
 export const SYNC_SETTINGS_DEFAULTS = Object.freeze({
     clockFormat: '24',
     dateFormat: 'en',
+    showClock: true,
     showSeconds: false,
     preferredSearchEngine: 'default',
     searchOpenInNewTab: false,

@@ -158,6 +158,7 @@
     "settingsUiSection": "介面設定",
     "settingsUiShowSearchBtn": "始終顯示搜尋按鈕",
     "settingsUiShowRefreshBtn": "始終顯示重新整理按鈕",
+    "settingsUiShowClock": "顯示時間",
     "settingsUiShowPhotoInfo": "始終顯示圖片資訊",
     "settingsUiLaunchpadShowNames": "啟動台圖示顯示名稱",
     "settingsUiCloseSettingsOnOutsideClick": "點擊外部關閉視窗",

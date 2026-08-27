@@ -44,6 +44,7 @@ describe('settings-contract', () => {
         expect(resolved).toEqual({
             clockFormat: SYNC_SETTINGS_DEFAULTS.clockFormat,
             dateFormat: SYNC_SETTINGS_DEFAULTS.dateFormat,
+            showClock: SYNC_SETTINGS_DEFAULTS.showClock,
             showSeconds: SYNC_SETTINGS_DEFAULTS.showSeconds,
             preferredSearchEngine: SYNC_SETTINGS_DEFAULTS.preferredSearchEngine,
             searchOpenInNewTab: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab,
@@ -94,6 +95,7 @@ describe('settings-contract', () => {
         setStorageData({}, 'sync');
 
         const data = await getSyncSettings({
+            showClock: undefined,
             showSeconds: undefined,
             searchOpenInNewTab: undefined,
             showSettingsBtn: undefined,
@@ -108,6 +110,7 @@ describe('settings-contract', () => {
         });
 
         expect(data).toMatchObject({
+            showClock: SYNC_SETTINGS_DEFAULTS.showClock,
             showSeconds: SYNC_SETTINGS_DEFAULTS.showSeconds,
             searchOpenInNewTab: SYNC_SETTINGS_DEFAULTS.searchOpenInNewTab,
             showSettingsBtn: SYNC_SETTINGS_DEFAULTS.showSettingsBtn,
