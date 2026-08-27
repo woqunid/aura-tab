@@ -1,0 +1,365 @@
+{
+  "3.5.3": {
+    "en": [
+      "Dock: You can now place Quick Links at the top or bottom of the page",
+      "Quick Links: Added text icons, custom colors, and more reliable site icon updates",
+      "Backgrounds: Improved reliability when refreshing and managing local images",
+      "Settings: Improved backup, restore, and cross-window updates",
+      "Cleanup: Removed the obsolete custom toolbar icon option"
+    ],
+    "zh_CN": [
+      "Dock：快速链接现在可以放在页面顶部或底部",
+      "快速链接：新增文字图标、自定义颜色，并改善网站图标更新效果",
+      "背景：刷新和管理本地图片时更加稳定",
+      "设置：优化备份、恢复和多窗口同步体验",
+      "整理：移除已废弃的自定义工具栏图标选项"
+    ],
+    "zh_TW": [
+      "Dock：快速連結現在可以放在頁面頂部或底部",
+      "快速連結：新增文字圖示、自訂顏色，並改善網站圖示更新效果",
+      "背景：重新整理和管理本機圖片時更加穩定",
+      "設定：優化備份、還原和多視窗同步體驗",
+      "整理：移除已廢棄的自訂工具列圖示選項"
+    ],
+    "moreUrl": ""
+  },
+  "3.5.2": {
+    "en": [
+      "Settings: Reorganized General and Dock options so interface, Launchpad density, and Dock appearance controls are grouped more clearly",
+      "Confirm Dialog: Fixed destructive confirmation dialogs appearing visually transparent over Settings and other overlays",
+      "Stepper Controls: Fixed plus/minus steppers so decrement, value, and increment columns are visually centered"
+    ],
+    "zh_CN": [
+      "设置：重新整理通用与 Dock 选项分组，让界面设置、启动台布局密度与 Dock 外观控制更清晰",
+      "确认对话框：修复删除等确认框在设置窗口和其他浮层上出现视觉透底的问题",
+      "步进控件：修复加减按钮左右宽度不均，列、数值与行等控件现在视觉居中"
+    ],
+    "zh_TW": [
+      "設定：重新整理通用與 Dock 選項分組，讓介面設定、啟動台佈局密度與 Dock 外觀控制更清楚",
+      "確認對話框：修復刪除等確認框在設定視窗和其他浮層上出現視覺透底的問題",
+      "步進控制項：修復加減按鈕左右寬度不均，列、數值與行等控制項現在視覺置中"
+    ],
+    "moreUrl": ""
+  },
+  "3.5.1": {
+    "en": [
+      "Launchpad: Added smoother circular page transitions and kept wrap clones out of focus and item selectors",
+      "Accessibility: Closing Launchpad now forces focus out before hiding when no opener can be restored"
+    ],
+    "zh_CN": [
+      "启动台：新增更平滑的循环翻页动画，并让过渡 clone 不再参与焦点与项目选择器命中",
+      "无障碍：当没有可恢复的打开源时，关闭启动台会先强制移出焦点，再对辅助技术隐藏"
+    ],
+    "zh_TW": [
+      "啟動台：新增更平滑的循環翻頁動畫，並讓過渡 clone 不再參與焦點與項目選擇器命中",
+      "無障礙：當沒有可恢復的開啟來源時，關閉啟動台會先強制移出焦點，再對輔助技術隱藏"
+    ],
+    "moreUrl": ""
+  },
+  "3.5.0": {
+    "en": [
+      "Accessibility: Focus restoration across modals and Launchpad — focus returns to the opener before overlays hide from assistive tech",
+      "Confirm Dialog: New accessible confirmation dialog with focus trap, keyboard navigation, and ARIA support",
+      "Settings: Added Resources section with Privacy Policy link and localized backup section descriptions",
+      "Photos: Simplified cache status display and unified empty-state icons per category",
+      "Dock: Removed touch event listeners from magnifier for cleaner pointer handling",
+      "Launchpad: Touch swipe gesture lifecycle now tied to open/close for better stability",
+      "Background Defaults: Overlay set to 0 by default; refresh button and photo info now enabled by default",
+      "CSS: Hover effects now work on all pointer devices instead of fine-pointer only; removed narrow height media queries",
+      "Safety: Added optional-chain guards for chrome.runtime.onMessage listeners"
+    ],
+    "zh_CN": [
+      "无障碍：模态窗口与启动台关闭时优先恢复焦点，再对辅助技术隐藏，读屏焦点不再丢失",
+      "确认对话框：新增无障碍确认对话框，支持焦点陷阱、键盘导航与 ARIA 属性",
+      "设置：新增“相关链接”区块，含隐私政策入口与本地/WebDAV 备份说明文案",
+      "图库：精简缓存状态展示，各分类空状态图标统一由 ICONS 管理",
+      "Dock：放大镜移除触摸事件监听，指针处理更精简",
+      "启动台：触摸滑动手势生命周期绑定打开/关闭，稳定性提升",
+      "背景默认值：遮罩默认值改为 0；刷新按钮与图片信息默认开启",
+      "CSS：悬停效果在所有指针设备生效，移除窄高度媒体查询",
+      "安全性：chrome.runtime.onMessage 监听器添加可选链防护"
+    ],
+    "zh_TW": [
+      "無障礙：模態視窗與啟動台關閉時優先恢復焦點，再對輔助技術隱藏，螢幕閱讀焦點不再遺失",
+      "確認對話框：新增無障礙確認對話框，支援焦點陷阱、鍵盤導航與 ARIA 屬性",
+      "設定：新增「相關連結」區塊，含隱私權政策入口與本地/WebDAV 備份說明文案",
+      "圖庫：精簡快取狀態展示，各分類空白狀態圖示統一由 ICONS 管理",
+      "Dock：放大鏡移除觸控事件監聽器，指標處理更精簡",
+      "啟動台：觸控滑動手勢生命週期綁定開啟/關閉，穩定性提升",
+      "背景預設值：遮罩預設值改為 0；重新整理按鈕與圖片資訊預設開啟",
+      "CSS：懸停效果在所有指標裝置生效，移除窄高度媒體查詢",
+      "安全性：chrome.runtime.onMessage 監聽器新增可選鏈防護"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.9": {
+    "en": [
+      "App Icons: Redesigned all app icons with a fresh new look",
+      "Architecture: Simplified platform layers by replacing abstraction wrappers (runtime-bus, storage-repo, ui-state-machine) with direct chrome.* API calls",
+      "Code Cleanup: Removed orphaned assets, planning files (.sisyphus), and legacy test suites"
+    ],
+    "zh_CN": [
+      "应用图标：全新设计了所有应用图标",
+      "架构简化：移除 runtime-bus、storage-repo、ui-state-machine 等中间抽象层，改为直接调用 chrome.* API",
+      "代码清理：移除废弃的资产文件、.sisyphus 规划目录及遗留测试套件"
+    ],
+    "zh_TW": [
+      "應用圖示：全新設計了所有應用圖示",
+      "架構簡化：移除 runtime-bus、storage-repo、ui-state-machine 等中間抽象層，改為直接呼叫 chrome.* API",
+      "程式碼清理：移除廢棄的資產檔案、.sisyphus 規劃目錄及遺留測試套件"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.8": {
+    "en": [
+      "Accessibility: Stronger ARIA labeling, modal focus management, and screen reader support across the new tab experience",
+      "Quick Links: URL validation with clear feedback for invalid addresses; skip link to main content; clearer context menu labels"
+    ],
+    "zh_CN": [
+      "无障碍：强化 ARIA 与焦点管理，优化模态框与装饰性图标的读屏体验",
+      "快速链接：强化 URL 校验与无效地址提示；新增跳转主内容的跳过链接；优化右键菜单文案"
+    ],
+    "zh_TW": [
+      "無障礙：強化 ARIA 與焦點管理，優化模態框與裝飾性圖示的螢幕閱讀體驗",
+      "快速連結：強化 URL 檢核與無效位址提示；新增跳至主內容的跳過連結；優化右鍵選單文案"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.7": {
+    "en": [
+      "Background Sources: Added Bing with market-aware daily refresh and no API key requirement",
+      "Shortcut Manager: Added configurable keyboard shortcuts for Focus Search and Open Launchpad",
+      "Bookmark Import Safety: Added sync quota precheck and clearer failure states to avoid partial data writes",
+      "Photos Gallery: Added Bing category and improved remote thumbnail/favorites ordering behavior"
+    ],
+    "zh_CN": [
+      "背景图源：新增 Bing，按市场区域每日刷新且无需 API Key",
+      "快捷键管理：新增“聚焦搜索”和“打开启动台”的可配置快捷键",
+      "书签导入安全性：新增同步配额预检与更清晰失败状态，避免部分数据写入",
+      "图库改进：新增 Bing 分类并优化远程缩略图与收藏排序行为"
+    ],
+    "zh_TW": [
+      "背景圖源：新增 Bing，依市場區域每日重新整理且不需 API Key",
+      "快捷鍵管理：新增「聚焦搜尋」與「開啟啟動台」可設定快捷鍵",
+      "書籤匯入安全性：新增同步配額預檢與更清晰失敗狀態，避免部分資料寫入",
+      "圖庫改進：新增 Bing 分類並優化遠端縮圖與收藏排序行為"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.6": {
+    "en": [
+      "Settings Contract: Unified default values for sync settings to keep UI state and runtime behavior consistent",
+      "General Settings Fix: Resolved non-persistent toggle display mismatch for Settings/Search button visibility",
+      "Changelog Dialog Simplification: Removed 'Ignore this version'; Close now persists last seen version to prevent repeated prompts",
+      "Default Drift Fix: Install-time background defaults now reuse canonical defaults without altering existing user data"
+    ],
+    "zh_CN": [
+      "设置契约层：统一同步设置默认值，确保 UI 状态与运行时行为一致",
+      "通用设置修复：解决设置按钮/搜索按钮显示开关的 UI 与持久化状态不一致问题",
+      "更新日志弹窗收敛：移除“忽略此版本”，关闭按钮改为持久化已读版本，避免同版本反复弹出",
+      "默认值漂移修复：安装初始化背景配置改为复用统一默认值，不影响现有用户数据"
+    ],
+    "zh_TW": [
+      "設定契約層：統一同步設定預設值，確保 UI 狀態與執行期行為一致",
+      "通用設定修復：解決設定按鈕/搜尋按鈕顯示開關的 UI 與持久化狀態不一致問題",
+      "更新日誌彈窗收斂：移除「忽略此版本」，關閉按鈕改為持久化已讀版本，避免同版本重複彈出",
+      "預設值漂移修復：安裝初始化背景設定改為復用統一預設值，不影響既有使用者資料"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.5": {
+    "en": [
+      "Background Preload Optimization: Skip unnecessary preloads for tabs frequency on online sources",
+      "Startup Refresh Logic: Defer background refresh until tab becomes visible",
+      "Performance: Reduce network requests when using tabs-based background switching"
+    ],
+    "zh_CN": [
+      "背景预加载优化：针对标签页频率的在线图源禁用不必要的预加载",
+      "启动刷新逻辑：延迟背景刷新直到标签页可见",
+      "性能优化：减少基于标签页切换时的网络请求"
+    ],
+    "zh_TW": [
+      "背景預載入優化：針對分頁頻率的線上圖源禁用不必要的預載入",
+      "啟動重新整理邏輯：延遲背景重新整理直到分頁可見",
+      "效能優化：減少基於分頁切換時的網路請求"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.4": {
+    "en": [
+      "Error Handling: Unified error utilities with deduplication and recoverable error detection",
+      "Background Loading: Suppress notifications for timeout/network errors during startup",
+      "Image Pipeline: Configurable load timeouts with graceful fallback to color background",
+      "Backup Restore: Improved icon cache compatibility with legacy backup formats"
+    ],
+    "zh_CN": [
+      "错误处理：新增统一错误处理工具，支持日志去重和可恢复错误检测",
+      "背景加载：启动时抑制超时/网络错误的通知弹窗",
+      "图片管道：支持自定义加载超时，失败时优雅降级到纯色背景",
+      "备份恢复：改进图标缓存兼容性，支持旧版备份格式"
+    ],
+    "zh_TW": [
+      "錯誤處理：新增統一錯誤處理工具，支援日誌去重和可恢復錯誤偵測",
+      "背景載入：啟動時抑制逾時/網路錯誤的通知彈窗",
+      "圖片管道：支援自訂載入逾時，失敗時優雅降級到純色背景",
+      "備份恢復：改進圖示快取相容性，支援舊版備份格式"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.3": {
+    "en": [
+      "Fixed race condition: macOS window outside-click settings now load reliably on first open",
+      "Modal layer improvements: preserve z-index when re-registering modals",
+      "UI Polish: Added slider fill indicator for better visual feedback"
+    ],
+    "zh_CN": [
+      "修复竞态条件：macOS 窗口外部点击设置首次打开时可靠加载",
+      "模态层改进：重新注册模态时保持 z-index 层级",
+      "UI 优化：添加滑块填充指示器提升视觉反馈"
+    ],
+    "zh_TW": [
+      "修復競態條件：macOS 視窗外部點擊設定首次開啟時可靠載入",
+      "模態層改進：重新註冊模態時保持 z-index 層級",
+      "UI 優化：新增滑桿填充指示器提升視覺回饋"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.2": {
+    "en": [
+      "ESLint Integration: Added code linting with ES2022 configuration",
+      "Community Guidelines: Added CODE_OF_CONDUCT.md and SECURITY.md",
+      "Code Quality: Fixed ESLint warnings across codebase"
+    ],
+    "zh_CN": [
+      "ESLint 集成：添加 ES2022 配置的代码检查",
+      "社区规范：新增 CODE_OF_CONDUCT.md 和 SECURITY.md",
+      "代码质量：修复代码库中的 ESLint 警告"
+    ],
+    "zh_TW": [
+      "ESLint 整合：新增 ES2022 設定的程式碼檢查",
+      "社群規範：新增 CODE_OF_CONDUCT.md 和 SECURITY.md",
+      "程式碼品質：修復程式碼庫中的 ESLint 警告"
+    ],
+    "moreUrl": ""
+  },
+  "3.4.1": {
+    "en": [
+      "WebDAV Password Toggle: Show/hide password visibility button",
+      "Backup Stability Fix: Fixed DOMException in icon cache export",
+      "Code Cleanup: Removed legacy migration code"
+    ],
+    "zh_CN": [
+      "WebDAV 密码显示切换：添加显示/隐藏密码按钮",
+      "备份稳定性修复：修复图标缓存导出时的 DOMException",
+      "代码清理：移除旧版迁移代码"
+    ],
+    "zh_TW": [
+      "WebDAV 密碼顯示切換：新增顯示/隱藏密碼按鈕",
+      "備份穩定性修復：修復圖示快取匯出時的 DOMException",
+      "代碼清理：移除舊版遷移代碼"
+    ],
+    "moreUrl": ""
+  },
+  "3.4": {
+    "en": [
+      "i18n Support: Full Chinese and English localization",
+      "Smart Background Cropping: Auto-crop based on screen size and focal point",
+      "Background Transitions: Smooth fade animations when switching backgrounds",
+      "First Paint Optimization: Faster initial load with color persistence",
+      "Toolbar Icon Customization: Upload, apply, and reset custom toolbar icons",
+      "Launchpad Folder Enhancement: Pin to Dock, responsive layout support",
+      "Background Cache Management: Configurable TTL, max entries, and size limits"
+    ],
+    "zh_CN": [
+      "国际化支持：完整的中英文本地化",
+      "背景智能裁剪：根据屏幕尺寸和焦点自动裁剪",
+      "背景过渡动画：切换背景时平滑淡入淡出效果",
+      "首屏加载优化：颜色持久化，更快显示初始界面",
+      "工具栏图标定制：上传、应用、重置自定义图标",
+      "启动台文件夹增强：支持固定到 Dock、响应式布局",
+      "背景缓存管理：可配置 TTL、最大条目数、大小限制"
+    ],
+    "zh_TW": [
+      "國際化支援：完整的中英文本地化",
+      "背景智慧裁剪：根據螢幕尺寸和焦點自動裁剪",
+      "背景過渡動畫：切換背景時平滑淡入淡出效果",
+      "首屏載入優化：顏色持久化，更快顯示初始介面",
+      "工具列圖示自訂：上傳、套用、重設自訂圖示",
+      "啟動台資料夾增強：支援釘選到 Dock、響應式佈局",
+      "背景快取管理：可設定 TTL、最大項目數、大小限制"
+    ],
+    "moreUrl": ""
+  },
+  "3.3": {
+    "en": [
+      "Cloud Backup: WebDAV support for Nutstore, Synology NAS, etc.",
+      "Unified Backup Format: Local export now uses ZIP with all data",
+      "Breaking: Old JSON exports (.json) are no longer supported"
+    ],
+    "zh_CN": [
+      "云端备份：支持坚果云、群晖 NAS 等 WebDAV 服务",
+      "统一备份格式：本地导出现采用 ZIP 包含所有数据",
+      "破坏性变更：不再支持旧版 JSON 导出文件"
+    ],
+    "zh_TW": [
+      "雲端備份：支援堅果雲、群暉 NAS 等 WebDAV 服務",
+      "統一備份格式：本地匯出現採用 ZIP 包含所有資料",
+      "破壞性變更：不再支援舊版 JSON 匯出檔案"
+    ],
+    "moreUrl": ""
+  },
+  "3.2": {
+    "en": [
+      "New Quick Link Manager: Search, pagination, and bulk actions",
+      "Storage Engine Upgrade: Migrated to chunked format (v5) for stability",
+      "Performance: Optimized local file storage using IndexedDB",
+      "UI Refinement: Modernized Settings sidebar with SF Symbols"
+    ],
+    "zh_CN": [
+      "全新快速链接管理器：支持搜索、分页与批量操作",
+      "存储引擎升级：迁移至 v5 分块格式，读写更快更安全",
+      "底层性能优化：采用 IndexedDB 管理本地文件存储",
+      "视觉细节打磨：设置侧边栏采用 SF Symbols 风格图标"
+    ],
+    "zh_TW": [
+      "全新快速連結管理器：支援搜尋、分頁與批次操作",
+      "儲存引擎升級：遷移至 v5 分塊格式，讀寫更快更安全",
+      "底層效能優化：採用 IndexedDB 管理本地檔案儲存",
+      "視覺細節打磨：設定側邊欄採用 SF Symbols 風格圖示"
+    ],
+    "moreUrl": ""
+  },
+  "3.1": {
+    "en": [
+      "Interaction Experience: Refactored layout with new search and Launchpad shortcuts",
+      "Performance, stability and visual refinements across the board"
+    ],
+    "zh_CN": [
+      "交互体验升级：重构布局，新增搜索与启动台快捷键",
+      "全面优化性能、稳定性与细节视觉表现"
+    ],
+    "zh_TW": [
+      "交互體驗升級：重構佈局，新增搜尋與啟動台快捷鍵",
+      "全面優化效能、穩定性與細節視覺表現"
+    ],
+    "moreUrl": ""
+  },
+  "3.0": {
+    "en": [
+      "New top-right changelog popover after updates",
+      "Improved performance and memory usage",
+      "Better i18n support and theme integration"
+    ],
+    "zh_CN": [
+      "更新后右上角新增更新日志弹窗",
+      "性能与内存优化",
+      "完善多语言与主题适配"
+    ],
+    "zh_TW": [
+      "更新後右上角新增更新日誌彈窗",
+      "效能與記憶體優化",
+      "完善多語言與主題適配"
+    ],
+    "moreUrl": ""
+  }
+}

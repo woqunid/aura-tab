@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Aura Tab",
+    "description": "Extension name displayed in browser"
+  },
+  "extDescription": {
+    "message": "重塑新标签页美学。独家动态光晕与毛玻璃质感，搭配 4K 高清壁纸与灵动 Dock 栏。原生极速，零广告零追踪。",
+    "description": "Extension description displayed in browser and store"
+  }
+}

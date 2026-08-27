@@ -1,0 +1,909 @@
+import { t } from '../../platform/i18n.js';
+import { runWithTimeout } from '../../shared/net.js';
+import { getErrorMessage, isRecoverableError, logWithDedup } from '../../shared/error-utils.js';
+import {
+    applyBackgroundMethodsTo,
+    runBackgroundTransition,
+    analyzeCropForBackground,
+    clearCropAnalysisCache,
+    getCropFallbackPosition,
+    blobUrlManager,
+    needsBackgroundChange,
+    showNotification
+} from './image-pipeline.js';
+import {
+    getApplyOptions as getBackgroundApplyOptions,
+    isOnlineBackgroundType,
+    BackgroundMetadataCache,
+    Mutex,
+    textureManager
+} from './controller-actions.js';
+import { localFilesManager } from './source-local.js';
+import { getProvider } from './source-remote.js';
+import { DEFAULT_SETTINGS } from './types.js';
+import { resolveEffectiveFrequency } from './refresh-policy.js';
+
+const REFRESH_BACKGROUND_MESSAGE = 'refreshBackground';
+
+export const RUNTIME_KEYS = {
+    overlay: 'bgRuntimeOverlay',
+    blur: 'bgRuntimeBlur',
+    brightness: 'bgRuntimeBrightness'
+};
+
+class BackgroundSystem {
+    constructor() {
+        this.settings = { ...DEFAULT_SETTINGS };
+        this.currentBackground = null;
+        this.nextBackground = null;
+        this._localFilesManager = localFilesManager;
+
+        this.wrapper = null;
+        this.mediaContainer = null;
+        this.colorContainer = null;
+        this.textureContainer = null;
+
+        this.initialized = false;
+        this._instanceId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        this._loadMutex = new Mutex();
+        this._loadGeneration = 0;
+        this._storageApplyGeneration = 0;
+
+        this._metadataCache = new BackgroundMetadataCache();
+
+        this._readyResolve = null;
+        this._readyPromise = new Promise(resolve => {
+            this._readyResolve = resolve;
+        });
+
+        this.localDefaultPath = 'assets/backgrounds/Background1.jpg';
+
+        this._visibilityHandler = null;
+        this._startupPhaseResetTimer = null;
+        this._pendingStartupRefreshOnVisible = false;
+        this._runtimeMessageHandler = null;
+        this._storageChangeHandler = null;
+    }
+
+    async init() {
+        if (this.initialized) return;
+
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
+
+        this.createDOMStructure();
+
+        // Show cached average color immediately (eliminates black-screen gap).
+        try {
+            const { lastBackgroundColor } = await chrome.storage.local.get({
+                lastBackgroundColor: null
+            });
+            if (lastBackgroundColor) {
+                document.documentElement.style.setProperty('--solid-background', lastBackgroundColor);
+            }
+        } catch { /* non-critical */ }
+
+        await this.loadSettings();
+        // Kick off local-files metadata init early so it can overlap with startup work.
+        const localFilesInitPromise = localFilesManager.init();
+        if (this.settings.type === 'files') {
+            await localFilesInitPromise;
+        }
+
+        textureManager.init(this.textureContainer);
+        this.applyFilters();
+
+        try {
+            await chrome.storage.session.set({
+                [RUNTIME_KEYS.overlay]: this.settings.overlay,
+                [RUNTIME_KEYS.blur]: this.settings.blur,
+                [RUNTIME_KEYS.brightness]: this.settings.brightness
+            });
+        } catch (e) {
+            console.warn('[Background] Session storage unavailable:', e.message);
+        }
+
+        textureManager.apply(this.settings.texture);
+        const startupNeedRefresh = needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
+        const hasStoredStartupBackground = this.settings.type !== 'color' && Boolean(this.currentBackground);
+        let shouldRefreshAfterInit = false;
+
+        if (hasStoredStartupBackground) {
+            try {
+                const startupType = this.currentBackground?.file ? 'files' : this.settings.type;
+                await runBackgroundTransition(this, {
+                    background: this.currentBackground,
+                    type: startupType,
+                    basePrepareTimeoutMs: 80,
+                    updateTimestamp: false,
+                    save: false,
+                    preload: false,
+                    phase: 'startup'
+                });
+                shouldRefreshAfterInit = startupNeedRefresh;
+            } catch (error) {
+                logWithDedup('warn', '[Background] Startup warm background apply failed, falling back to normal load:', error, {
+                    dedupeKey: 'background.startup.warm-failure',
+                    skipIfRecoverable: true
+                });
+                await this.loadBackground({ phase: 'startup', suppressRecoverableErrors: true });
+            }
+        } else {
+            await this.loadBackground({ phase: 'startup', suppressRecoverableErrors: true });
+        }
+
+        await localFilesInitPromise;
+
+        this.initMessageListener();
+        this.initVisibilityListener();
+        this.initStorageListener();
+
+        this.initialized = true;
+        if (this._readyResolve) {
+            this._readyResolve();
+        }
+
+        if (shouldRefreshAfterInit) {
+            if (document.hidden) {
+                this._pendingStartupRefreshOnVisible = true;
+            } else {
+                this._scheduleStartupRefresh();
+            }
+        }
+    }
+
+    whenReady(timeout = 10000) {
+        if (this.initialized) return Promise.resolve();
+
+        return Promise.race([
+            this._readyPromise,
+            new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Background system initialization timeout'));
+                }, timeout);
+            })
+        ]);
+    }
+
+    createDOMStructure() {
+        this.wrapper = document.createElement('div');
+        this.wrapper.id = 'background-wrapper';
+        // No 'hidden' class — color layer is visible immediately via CSS defaults.
+        this.wrapper.dataset.type = 'files';
+        this.wrapper.dataset.texture = 'none';
+        this.wrapper.dataset.phase = 'normal';
+
+        this.wrapper.innerHTML = `
+            <div id="background-media"></div>
+            <div id="background-color"></div>
+            <div id="background-texture"></div>
+        `;
+
+        document.body.insertBefore(this.wrapper, document.body.firstChild);
+
+        this.mediaContainer = document.getElementById('background-media');
+        this.colorContainer = document.getElementById('background-color');
+        this.textureContainer = document.getElementById('background-texture');
+    }
+
+    async loadSettings() {
+        try {
+            let backgroundSettings = undefined;
+            let hasBackgroundSettings = false;
+            let syncReadFailed = false;
+
+            try {
+                const syncData = await chrome.storage.sync.get('backgroundSettings');
+                backgroundSettings = syncData?.backgroundSettings;
+                hasBackgroundSettings = backgroundSettings !== undefined;
+            } catch (syncError) {
+                syncReadFailed = true;
+                console.error('[Background] Failed to read sync backgroundSettings:', syncError);
+            }
+
+            if (hasBackgroundSettings && backgroundSettings && typeof backgroundSettings === 'object' && !Array.isArray(backgroundSettings)) {
+                this.settings = {
+                    ...DEFAULT_SETTINGS,
+                    ...backgroundSettings,
+                    texture: {
+                        ...DEFAULT_SETTINGS.texture,
+                        ...(backgroundSettings.texture || {})
+                    },
+                    apiKeys: {
+                        ...DEFAULT_SETTINGS.apiKeys,
+                        ...(backgroundSettings.apiKeys || {})
+                    }
+                };
+            } else {
+                this.settings = { ...DEFAULT_SETTINGS };
+                if (!hasBackgroundSettings && !syncReadFailed) {
+                    await this.saveSettings();
+                }
+            }
+
+            const localData = await chrome.storage.local.get({
+                currentBackground: null,
+                lastBackgroundChange: null
+            });
+
+            if (localData.currentBackground) {
+                this.currentBackground = await this._hydrateStoredBackground(localData.currentBackground);
+            }
+
+            this.lastChange = localData.lastBackgroundChange;
+        } catch (error) {
+            console.error('[Background] Failed to load settings:', error);
+            this.settings = { ...DEFAULT_SETTINGS };
+        }
+    }
+
+    _serializeBackgroundForStorage(background) {
+        if (!background || typeof background !== 'object') return null;
+
+        // Reusable crop data payload shared by both local-file and remote branches.
+        const cropData = {};
+        if (background.position) cropData.position = background.position;
+        if (background.focalPoint) cropData.focalPoint = background.focalPoint;
+        if (background.cropMeta) cropData.cropMeta = background.cropMeta;
+
+        if (background.file && background.id) {
+            return {
+                format: background.format || 'image',
+                id: background.id,
+                file: background.file,
+                color: background.color || null,
+                ...cropData
+            };
+        }
+
+        const serialized = { ...background };
+        if (serialized.urls) {
+            serialized.urls = {
+                full: serialized.urls.full?.startsWith('blob:') ? null : serialized.urls.full,
+                small: serialized.urls.small?.startsWith('blob:') ? null : serialized.urls.small
+            };
+        }
+        return serialized;
+    }
+
+    async _hydrateStoredBackground(stored) {
+        if (!stored || typeof stored !== 'object') return null;
+
+        const scope = `hydrate-${stored.id || Date.now()}`;
+
+        if (stored.file && stored.id) {
+            try {
+                const hydrated = await localFilesManager.getFile(stored.id, scope, {
+                    includeFull: true,
+                    includeSmall: true
+                });
+
+                if (!hydrated) {
+                    blobUrlManager.releaseScope(scope);
+                    return null;
+                }
+
+                return {
+                    ...hydrated,
+                    color: stored.color || null,
+                    // Restore persisted crop data so _prepareBackgroundForDisplay() can skip re-analysis.
+                    ...(stored.position && { position: stored.position }),
+                    ...(stored.focalPoint && { focalPoint: stored.focalPoint }),
+                    ...(stored.cropMeta && { cropMeta: stored.cropMeta })
+                };
+            } catch {
+                blobUrlManager.releaseScope(scope);
+                return null;
+            }
+        }
+
+        return stored;
+    }
+
+    async saveSettings() {
+        try {
+            const settingsToSave = {
+                type: this.settings.type,
+                frequency: this.settings.frequency,
+                fadein: this.settings.fadein,
+                brightness: this.settings.brightness,
+                blur: this.settings.blur,
+                overlay: this.settings.overlay,
+                color: this.settings.color,
+                texture: { ...this.settings.texture },
+                showRefreshButton: this.settings.showRefreshButton,
+                showPhotoInfo: this.settings.showPhotoInfo,
+                smartCropEnabled: this.settings.smartCropEnabled,
+                apiKeys: { ...this.settings.apiKeys }
+            };
+
+            await chrome.storage.sync.set({ backgroundSettings: settingsToSave });
+        } catch (error) {
+            console.error('[Background] Failed to save settings:', error);
+        }
+    }
+
+    applyFilters() {
+        const root = document.documentElement;
+        root.style.setProperty('--bg-blur', `${this.settings.blur}px`);
+        root.style.setProperty('--bg-brightness', (this.settings.brightness / 100).toString());
+        root.style.setProperty('--bg-overlay', (this.settings.overlay / 100).toString());
+        root.style.setProperty('--bg-fade-in', `${this.settings.fadein}ms`);
+    }
+
+    applyRuntimeValues(values) {
+        const root = document.documentElement;
+        if (typeof values.blur === 'number' && Number.isFinite(values.blur)) {
+            root.style.setProperty('--bg-blur', `${values.blur}px`);
+        }
+        if (typeof values.brightness === 'number' && Number.isFinite(values.brightness)) {
+            root.style.setProperty('--bg-brightness', (values.brightness / 100).toString());
+        }
+        if (typeof values.overlay === 'number' && Number.isFinite(values.overlay)) {
+            root.style.setProperty('--bg-overlay', (values.overlay / 100).toString());
+        }
+    }
+
+    _normalizeLoadBackgroundOptions(forceOrOptions = false) {
+        if (typeof forceOrOptions === 'boolean') {
+            return {
+                force: forceOrOptions,
+                phase: 'normal',
+                suppressRecoverableErrors: false
+            };
+        }
+        if (forceOrOptions && typeof forceOrOptions === 'object') {
+            return {
+                force: Boolean(forceOrOptions.force),
+                phase: forceOrOptions.phase === 'startup' ? 'startup' : 'normal',
+                suppressRecoverableErrors: Boolean(forceOrOptions.suppressRecoverableErrors)
+            };
+        }
+        return {
+            force: false,
+            phase: 'normal',
+            suppressRecoverableErrors: false
+        };
+    }
+
+    async loadBackground(forceOrOptions = false) {
+        const loadGeneration = ++this._loadGeneration;
+
+        const {
+            force,
+            phase,
+            suppressRecoverableErrors
+        } = this._normalizeLoadBackgroundOptions(forceOrOptions);
+
+        await this._loadMutex.acquire();
+
+        try {
+            if (loadGeneration !== this._loadGeneration) return;
+
+            const requestedType = this.settings.type;
+            const needNew = force || needsBackgroundChange(this.settings.frequency, this.lastChange, requestedType);
+
+            if (needNew && requestedType !== 'color') {
+                this._ensurePlaceholderBackground();
+            }
+
+            if (!needNew && this.currentBackground) {
+                await runBackgroundTransition(this, {
+                    background: this.currentBackground,
+                    type: requestedType,
+                    basePrepareTimeoutMs: 140,
+                    updateTimestamp: false,
+                    save: false,
+                    preload: false,
+                    ...(phase === 'startup' ? { phase } : {})
+                });
+                return;
+            }
+
+            let background = null;
+
+            switch (requestedType) {
+                case 'files':
+                    background = await this.getLocalFileBackground();
+                    break;
+                case 'color':
+                    this.applyColorBackground(this.settings.color);
+                    return;
+                case 'unsplash':
+                case 'pixabay':
+                case 'pexels':
+                case 'bing':
+                    background = await this.getProviderBackground(requestedType, {
+                        suppressRecoverableErrors
+                    });
+                    break;
+                default:
+                    background = await this.getLocalFileBackground();
+            }
+
+            if (background && loadGeneration === this._loadGeneration) {
+                await runBackgroundTransition(this, {
+                    background,
+                    type: requestedType,
+                    basePrepareTimeoutMs: 140,
+                    updateTimestamp: true,
+                    save: true,
+                    preload: true,
+                    ...(phase === 'startup' ? { phase } : {})
+                });
+            }
+
+        } catch (error) {
+            if (loadGeneration !== this._loadGeneration) return;
+            logWithDedup('error', '[Background] Failed to load:', error, {
+                skipIfRecoverable: suppressRecoverableErrors
+            });
+
+            if (!(suppressRecoverableErrors && isRecoverableError(error))) {
+                showNotification(getErrorMessage(error, t('bgLoadFailed')), 'error');
+            }
+            try {
+                await this.applyDefaultBackground();
+            } catch (fallbackError) {
+                logWithDedup('error', '[Background] Default background fallback failed:', fallbackError, {
+                    skipIfRecoverable: suppressRecoverableErrors
+                });
+                this.applyColorBackground(this.settings.color || DEFAULT_SETTINGS.color);
+            }
+        } finally {
+            this._loadMutex.release();
+        }
+    }
+
+    async _saveBackgroundState(background) {
+        try {
+            await chrome.storage.local.set({
+                currentBackground: this._serializeBackgroundForStorage(background),
+                lastBackgroundChange: this.lastChange,
+                lastBackgroundColor: background.color || null,
+                _writeSource: this._instanceId
+            });
+        } catch (error) {
+            console.error('[Background] Failed to save state:', error);
+        }
+    }
+
+    async getLocalFileBackground() {
+        await localFilesManager.init();
+        const localFile = await localFilesManager.getSelectedFile() ||
+            await localFilesManager.getRandomFile();
+
+        if (localFile) {
+            return localFile;
+        }
+
+        return {
+            format: 'image',
+            id: 'default',
+            urls: {
+                full: chrome.runtime.getURL(this.localDefaultPath),
+                small: chrome.runtime.getURL(this.localDefaultPath)
+            }
+        };
+    }
+
+    async getProviderBackground(type, { suppressRecoverableErrors = false } = {}) {
+        const provider = getProvider(type);
+        if (!provider) {
+            throw new Error(t('bgUnknownProvider'));
+        }
+
+        const apiKey = this.settings.apiKeys[type] || '';
+        const requiresApiKey = provider.requiresApiKey !== false;
+
+        if (requiresApiKey && !apiKey) {
+            showNotification(t('bgApiKeyRequiredWithSource', { source: provider.name }), 'error');
+            return this.getLocalFileBackground();
+        }
+
+        try {
+            return await provider.fetchRandom(apiKey);
+        } catch (error) {
+            logWithDedup('error', `[Background] ${type} fetch error:`, error, {
+                skipIfRecoverable: true
+            });
+            if (!(suppressRecoverableErrors && isRecoverableError(error))) {
+                showNotification(getErrorMessage(error, t('bgLoadFailed')), 'error');
+            }
+            return this.getLocalFileBackground();
+        }
+    }
+
+    _getViewportAspect() {
+        const width = Math.max(window.innerWidth || 1, 1);
+        const height = Math.max(window.innerHeight || 1, 1);
+        return width / height;
+    }
+
+    _isOnlineBackgroundType(type = this.settings.type) {
+        return isOnlineBackgroundType(type);
+    }
+
+    _getApplyOptions(type = this.settings.type) {
+        return getBackgroundApplyOptions(this.settings, type);
+    }
+
+    _getEffectiveFrequency(type = this.settings.type, frequency = this.settings.frequency) {
+        return resolveEffectiveFrequency(type, frequency);
+    }
+
+    async _prepareBackgroundForDisplay(background, { timeoutMs = 140 } = {}) {
+        if (!background || typeof background !== 'object') return background;
+        if (this.settings.type === 'color') return background;
+        if (this.settings.smartCropEnabled === false) return background;
+
+        if (background.file?.position) return background;
+
+        const analysisUrl = background.urls?.full || background.urls?.small;
+        if (!analysisUrl) return background;
+
+        const viewportAspect = this._getViewportAspect();
+        const viewportAspectKey = viewportAspect.toFixed(3);
+        const hasPosition = Boolean(background.position?.x && background.position?.y);
+        const cropMeta = background.cropMeta;
+        const canReusePosition = hasPosition &&
+            cropMeta?.analysisUrl === analysisUrl &&
+            cropMeta?.viewportAspect === viewportAspectKey;
+
+        if (canReusePosition) return background;
+
+        if (hasPosition) {
+            delete background.position;
+            delete background.focalPoint;
+        }
+
+        try {
+            const { timedOut, result } = await runWithTimeout(
+                analyzeCropForBackground(analysisUrl, viewportAspect),
+                timeoutMs
+            );
+
+            if (timedOut) {
+                return background;
+            }
+
+            if (!result?.position) {
+                background.position = getCropFallbackPosition();
+                background.cropMeta = {
+                    analysisUrl,
+                    viewportAspect: viewportAspectKey
+                };
+                return background;
+            }
+
+            background.position = result.position;
+            background.focalPoint = result.focalPoint || null;
+            background.cropMeta = {
+                analysisUrl,
+                viewportAspect: viewportAspectKey
+            };
+
+            if (Number.isFinite(result.width)) {
+                background.width = result.width;
+            }
+            if (Number.isFinite(result.height)) {
+                background.height = result.height;
+            }
+
+            return background;
+        } catch {
+            background.position = getCropFallbackPosition();
+            background.cropMeta = {
+                analysisUrl,
+                viewportAspect: viewportAspectKey
+            };
+            return background;
+        }
+    }
+
+    initMessageListener() {
+        if (this._runtimeMessageHandler) return;
+        this._runtimeMessageHandler = (message) => {
+            if (message?.type !== REFRESH_BACKGROUND_MESSAGE) return false;
+            void this.refresh();
+            return false;
+        };
+        const runtimeOnMessage = chrome?.runtime?.onMessage;
+        runtimeOnMessage?.addListener?.(this._runtimeMessageHandler);
+    }
+
+    initVisibilityListener() {
+        if (this._visibilityHandler) return;
+        this._visibilityHandler = () => {
+            if (document.visibilityState !== 'visible' || !this.initialized) {
+                return;
+            }
+
+            if (this._pendingStartupRefreshOnVisible) {
+                this._scheduleStartupRefresh();
+                return;
+            }
+
+            if (this._shouldAutoRefreshOnVisibility()) {
+                void this.loadBackground();
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+    }
+
+    _scheduleStartupRefresh() {
+        this._pendingStartupRefreshOnVisible = false;
+        const refreshInBackground = () => {
+            if (document.hidden || document.visibilityState !== 'visible') {
+                this._pendingStartupRefreshOnVisible = true;
+                return;
+            }
+            if (this._getEffectiveFrequency() === 'tabs') {
+                void this.refresh();
+                return;
+            }
+            if (this._shouldAutoRefreshOnVisibility()) {
+                void this.loadBackground();
+            }
+        };
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(() => {
+                refreshInBackground();
+            }, { timeout: 1200 });
+        } else {
+            setTimeout(refreshInBackground, 0);
+        }
+    }
+
+    _shouldAutoRefreshOnVisibility() {
+        if (this.settings.type === 'color') return false;
+        const effectiveFrequency = this._getEffectiveFrequency();
+        if (effectiveFrequency === 'tabs') return false;
+        if (effectiveFrequency === 'never') return false;
+        return needsBackgroundChange(this.settings.frequency, this.lastChange, this.settings.type);
+    }
+
+    initStorageListener() {
+        if (this._storageChangeHandler) return;
+
+        this._storageChangeHandler = (changes, areaName) => {
+            if (areaName === 'session') {
+                const runtime = {};
+                if (changes[RUNTIME_KEYS.overlay]) {
+                    runtime.overlay = changes[RUNTIME_KEYS.overlay].newValue;
+                }
+                if (changes[RUNTIME_KEYS.blur]) {
+                    runtime.blur = changes[RUNTIME_KEYS.blur].newValue;
+                }
+                if (changes[RUNTIME_KEYS.brightness]) {
+                    runtime.brightness = changes[RUNTIME_KEYS.brightness].newValue;
+                }
+                if (Object.keys(runtime).length > 0) {
+                    this.applyRuntimeValues(runtime);
+                }
+                return;
+            }
+
+            if (areaName === 'sync' && changes.backgroundSettings) {
+                this._handleSettingsChange(changes.backgroundSettings.newValue);
+                return;
+            }
+
+            if (areaName === 'local') {
+                void this._handleLocalStorageChange(changes).catch((error) => {
+                    logWithDedup('error', '[Background] Failed to handle local storage change:', error, {
+                        skipIfRecoverable: true
+                    });
+                });
+            }
+        };
+        chrome.storage.onChanged.addListener(this._storageChangeHandler);
+    }
+
+    _handleSettingsChange(newValue) {
+        if (!newValue || typeof newValue !== 'object') return;
+
+        const oldType = this.settings.type;
+        const oldTexture = this.settings.texture;
+        const oldColor = this.settings.color;
+        const oldFilters = {
+            blur: this.settings.blur,
+            overlay: this.settings.overlay,
+            brightness: this.settings.brightness,
+            fadein: this.settings.fadein
+        };
+
+        this.settings = {
+            ...DEFAULT_SETTINGS,
+            ...newValue,
+            texture: { ...DEFAULT_SETTINGS.texture, ...(newValue.texture || {}) },
+            apiKeys: { ...DEFAULT_SETTINGS.apiKeys, ...(newValue.apiKeys || {}) }
+        };
+        const effectiveFrequency = this._getEffectiveFrequency(this.settings.type, this.settings.frequency);
+        if (this.settings.type === 'color' || effectiveFrequency !== 'tabs') {
+            this._pendingStartupRefreshOnVisible = false;
+        }
+
+        const filtersChanged =
+            oldFilters.blur !== this.settings.blur ||
+            oldFilters.overlay !== this.settings.overlay ||
+            oldFilters.brightness !== this.settings.brightness ||
+            oldFilters.fadein !== this.settings.fadein;
+
+        if (filtersChanged) {
+            this.applyFilters();
+        }
+
+        const textureChanged = JSON.stringify(oldTexture) !== JSON.stringify(this.settings.texture);
+        if (textureChanged) {
+            textureManager.apply(this.settings.texture);
+        }
+
+        const typeChanged = oldType !== this.settings.type;
+
+        if (this.settings.type === 'color') {
+            if (typeChanged || oldColor !== this.settings.color) {
+                this.applyColorBackground(this.settings.color);
+            }
+            return;
+        }
+
+        if (typeChanged) {
+            // Invalidate any provider result fetched for the previous source.
+            this._loadGeneration += 1;
+            this.nextBackground = null;
+            const isOnlineSource = this._isOnlineBackgroundType(this.settings.type);
+            if (!isOnlineSource) {
+                this.loadBackground(true);
+            }
+        }
+    }
+
+    async _handleLocalStorageChange(changes) {
+        if (changes._writeSource?.newValue === this._instanceId) {
+            return;
+        }
+
+        if (changes.currentBackground) {
+            const applyGeneration = ++this._storageApplyGeneration;
+            const hydrated = await this._hydrateStoredBackground(changes.currentBackground.newValue);
+            if (!hydrated || applyGeneration !== this._storageApplyGeneration) return;
+
+            await this._loadMutex.acquire();
+            try {
+                if (applyGeneration !== this._storageApplyGeneration) return;
+                this.currentBackground = hydrated;
+
+                if (changes.lastBackgroundChange?.newValue) {
+                    this.lastChange = changes.lastBackgroundChange.newValue;
+                }
+
+                if (this.settings.type === 'color') return;
+
+                const applyType = hydrated.file ? 'files' : this.settings.type;
+                await this._applyBackgroundInternal(hydrated, this._getApplyOptions(applyType));
+            } catch (error) {
+                logWithDedup('warn', '[Background] Failed to apply synced background change:', error, {
+                    skipIfRecoverable: true
+                });
+            } finally {
+                this._loadMutex.release();
+            }
+        }
+
+        if (changes.lastBackgroundChange && !changes.currentBackground) {
+            this.lastChange = changes.lastBackgroundChange.newValue;
+        }
+    }
+
+    async addLocalFiles(files, { origin } = {}) {
+        const results = await localFilesManager.addFiles(files, { origin });
+
+        if (results.length > 0 && this.settings.type === 'files') {
+            await this._applyBackgroundInternal(results[0], this._getApplyOptions('files'));
+        }
+
+        return results;
+    }
+
+    async deleteLocalFile(id, { origin } = {}) {
+        await localFilesManager.deleteFile(id, { origin });
+
+        if (this.currentBackground?.id === id) {
+            await this.loadBackground(true);
+        }
+    }
+
+    async getLocalFiles() {
+        return localFilesManager.getAllFiles();
+    }
+
+    async applyBackground(background) {
+        if (!background) return;
+
+        await this._loadMutex.acquire();
+        try {
+            const applyType = background.file ? 'files' : this.settings.type;
+            await runBackgroundTransition(this, {
+                background,
+                type: applyType,
+                basePrepareTimeoutMs: 180,
+                updateTimestamp: true,
+                save: true,
+                preload: false,
+                afterApply: async (prepared) => {
+                    if (prepared.file && prepared.id) {
+                        await localFilesManager.selectFile(prepared.id);
+                    }
+                }
+            });
+        } finally {
+            this._loadMutex.release();
+        }
+    }
+
+    getCurrentBackground() {
+        return this.currentBackground;
+    }
+
+    getSystemBackgrounds() {
+        return [{
+            format: 'image',
+            id: 'default',
+            isSystem: true,
+            urls: {
+                full: chrome.runtime.getURL(this.localDefaultPath),
+                small: chrome.runtime.getURL(this.localDefaultPath)
+            },
+            file: {
+                name: 'System Default'
+            }
+        }];
+    }
+
+    destroy() {
+        blobUrlManager.releaseAll();
+        this._metadataCache.clear();
+        clearCropAnalysisCache();
+
+        if (this._startupPhaseResetTimer) {
+            clearTimeout(this._startupPhaseResetTimer);
+            this._startupPhaseResetTimer = null;
+        }
+        this._pendingStartupRefreshOnVisible = false;
+
+        if (this._runtimeMessageHandler) {
+            const runtimeOnMessage = chrome?.runtime?.onMessage;
+            runtimeOnMessage?.removeListener?.(this._runtimeMessageHandler);
+            this._runtimeMessageHandler = null;
+        }
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+            this._visibilityHandler = null;
+        }
+        if (this._storageChangeHandler) {
+            chrome.storage.onChanged.removeListener(this._storageChangeHandler);
+            this._storageChangeHandler = null;
+        }
+    }
+}
+
+applyBackgroundMethodsTo(BackgroundSystem);
+
+export const backgroundSystem = new BackgroundSystem();
+let _backgroundUnloadHookInstalled = false;
+
+export async function initBackgroundSystem() {
+    if (!_backgroundUnloadHookInstalled) {
+        _backgroundUnloadHookInstalled = true;
+        window.addEventListener('unload', () => {
+            backgroundSystem.destroy();
+        });
+    }
+
+    await backgroundSystem.init();
+    return backgroundSystem;
+}

@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Aura Tab",
+    "description": "Extension name displayed in browser"
+  },
+  "extDescription": {
+    "message": "Redefine your new tab with minimalist aesthetics. Dynamic light orbs, 4K wallpapers, macOS-style Dock, and zero-lag performance.",
+    "description": "Extension description displayed in browser and store"
+  }
+}

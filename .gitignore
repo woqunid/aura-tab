@@ -1,0 +1,13 @@
+# OS
+.DS_Store
+
+# Node.js
+node_modules/
+
+# Test coverage
+coverage/
+
+# Build artifacts
+*.zip
+.alma-snapshots
+.worktrees/

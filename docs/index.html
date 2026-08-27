@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Tab — Reimagining Your New Tab</title>
+    <meta name="description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta name="robots" content="index,follow">
+    <!-- Absolute URLs below must match the deployed docs origin (e.g. GitHub Pages). Update if the site moves. -->
+    <link rel="canonical" href="https://nil-byte.github.io/aura-tab/docs/index.html">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="zh_CN">
+    <meta property="og:url" content="https://nil-byte.github.io/aura-tab/docs/index.html">
+    <meta property="og:title" content="Aura Tab — Reimagining Your New Tab">
+    <meta property="og:description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta property="og:image" content="https://nil-byte.github.io/aura-tab/docs/images/desktop.png">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Aura Tab — Reimagining Your New Tab">
+    <meta name="twitter:description" content="A minimalist, native-feeling New Tab extension for macOS lovers.">
+    <meta name="twitter:image" content="https://nil-byte.github.io/aura-tab/docs/images/desktop.png">
+
+    <link rel="icon" type="image/png" href="images/icon128.png">
+    <link rel="apple-touch-icon" href="images/icon128.png">
+
+    <style>
+        :root {
+            --bg: #ffffff;
+            --fg: #1d1d1f;
+            --gray: #86868b;
+            --link: #0066cc;
+            --nav-bg: rgba(255, 255, 255, 0.7);
+            --border: rgba(0,0,0,0.06);
+            --blur: saturate(180%) blur(20px);
+            --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+            --max-w: 1020px;
+        }
+
+        [data-theme="dark"] {
+            --bg: #000000;
+            --fg: #f5f5f7;
+            --gray: #86868b;
+            --link: #2997ff;
+            --nav-bg: rgba(0, 0, 0, 0.7);
+            --border: rgba(255,255,255,0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+        .docs-skip-link {
+            position: absolute;
+            left: -9999px;
+            z-index: 100000;
+            padding: 12px 16px;
+            background: var(--fg);
+            color: var(--bg);
+            font-size: 14px;
+            border-radius: 8px;
+        }
+        .docs-skip-link:focus {
+            left: 16px;
+            top: 12px;
+        }
+        
+        body {
+            font-family: var(--font);
+            background-color: var(--bg);
+            color: var(--fg);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            line-height: 1.47059;
+            letter-spacing: -0.011em;
+        }
+
+        a { text-decoration: none; color: inherit; transition: all 0.3s var(--ease); }
+        img { display: block; width: 100%; height: auto; }
+
+        /* ===== Advanced Nav ===== */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 48px;
+            background: transparent;
+            z-index: 9999;
+            transition:
+                background-color 0.35s var(--ease),
+                border-color 0.35s var(--ease),
+                box-shadow 0.35s var(--ease);
+        }
+
+        nav.scrolled {
+            background: var(--nav-bg);
+            backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur);
+            border-bottom: 0.5px solid var(--border);
+        }
+
+        .nav-content {
+            max-width: var(--max-w);
+            margin: 0 auto; height: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 24px;
+        }
+
+        .nav-brand {
+            font-size: 17px; font-weight: 600; letter-spacing: -0.022em;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .nav-brand img { width: 22px; height: 22px; border-radius: 5px; }
+        
+        .nav-items {
+            display: flex; gap: 34px;
+            font-size: 12px; color: var(--gray); font-weight: 400;
+        }
+        .nav-items a:hover { color: var(--fg); }
+
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        
+        .icon-btn {
+            cursor: pointer; width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; color: var(--gray);
+            transition: color 0.2s var(--ease), background-color 0.2s var(--ease);
+            border: none;
+            background: transparent;
+            padding: 0;
+            font: inherit;
+        }
+        .icon-btn:hover { color: var(--fg); background: rgba(0,0,0,0.04); }
+        [data-theme="dark"] .icon-btn:hover { background: rgba(255,255,255,0.08); }
+        .icon-btn svg { width: 17px; height: 17px; stroke-width: 2.2; }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            nav { transition: none; }
+            .reveal { transition: none !important; opacity: 1 !important; transform: none !important; }
+            .reveal.visible { transform: none !important; }
+            .hero-image { transition: none !important; }
+            .feature-media img { transition: none !important; }
+            .feature-row:hover .feature-media img {
+                transform: none;
+                box-shadow: 0 25px 60px -10px rgba(0,0,0,0.12);
+            }
+            .cta-pill:hover { transform: none; }
+        }
+
+        .cta-pill { 
+            font-size: 12px; font-weight: 500;
+            background: var(--fg); color: var(--bg);
+            padding: 5px 12px; border-radius: 100px;
+        }
+        .cta-pill:hover { transform: scale(1.04); opacity: 0.9; }
+
+        /* ===== Hero Section ===== */
+        .hero {
+            padding-top: 180px; padding-bottom: 120px;
+            text-align: center; max-width: var(--max-w);
+            margin: 0 auto; padding-left: 24px; padding-right: 24px;
+        }
+
+        .hero h1 {
+            font-size: clamp(48px, 10vw, 88px);
+            font-weight: 700; letter-spacing: -0.04em; line-height: 1.05;
+            margin-bottom: 24px; text-wrap: balance;
+            background: linear-gradient(180deg, var(--fg) 40%, var(--gray) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: clamp(20px, 2.5vw, 24px); color: var(--gray);
+            max-width: 680px; margin: 0 auto 56px;
+            letter-spacing: -0.015em; font-weight: 400;
+        }
+
+        .hero-links {
+            display: flex; gap: 40px; justify-content: center;
+            font-size: 19px; font-weight: 500; margin-bottom: 100px;
+        }
+        .hero-links a { color: var(--link); display: flex; align-items: center; gap: 4px; }
+        .hero-links a:hover { opacity: 0.7; }
+
+        .hero-image {
+            margin: 0 auto; border-radius: 24px;
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.18);
+            border: 0.5px solid var(--border); overflow: hidden;
+            transition: transform 1s var(--ease);
+        }
+
+        /* ===== Zig-zag Features ===== */
+        .feature-section {
+            padding: 120px 0; max-width: var(--max-w);
+            margin: 0 auto; padding-left: 24px; padding-right: 24px;
+        }
+
+        .feature-row {
+            display: flex; align-items: center; gap: 100px;
+            margin-bottom: 240px;
+        }
+        .feature-row:last-child { margin-bottom: 0; }
+        .feature-row.reverse { flex-direction: row-reverse; }
+
+        .feature-text { flex: 0 0 38%; }
+        .feature-media { flex: 1; position: relative; }
+
+        .feature-text h2 {
+            font-size: 40px; font-weight: 700;
+            letter-spacing: -0.03em; margin-bottom: 20px; line-height: 1.1;
+        }
+        
+        .feature-text p {
+            font-size: 19px; color: var(--gray); font-weight: 400;
+            letter-spacing: -0.012em; line-height: 1.47;
+        }
+
+        .feature-media img {
+            border-radius: 18px;
+            box-shadow: 0 25px 60px -10px rgba(0,0,0,0.12);
+            border: 0.5px solid var(--border);
+            transition: all 1.2s var(--ease);
+        }
+        
+        .feature-row:hover .feature-media img {
+            transform: translateY(-12px) scale(1.015);
+            box-shadow: 0 40px 80px -15px rgba(0,0,0,0.18);
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            border-top: 0.5px solid var(--border);
+            padding: 80px 0 60px;
+            font-size: 12px; color: var(--gray);
+        }
+        .footer-content {
+            max-width: var(--max-w); margin: 0 auto;
+            padding: 0 24px; display: flex; justify-content: space-between;
+        }
+
+        /* ===== Advanced Reveal ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px) scale(0.985);
+            transition: opacity 1.4s var(--ease), transform 1.2s var(--ease);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* i18n */
+        [data-lang="zh"] { display: none; }
+        body.zh [data-lang="en"] { display: none; }
+        body.zh [data-lang="zh"] { display: block; }
+
+        @media (max-width: 860px) {
+            .nav-items { display: none; }
+            .feature-row, .feature-row.reverse { flex-direction: column; gap: 40px; text-align: left; margin-bottom: 140px; }
+            .hero h1 { font-size: 48px; }
+        }
+    </style>
+</head>
+<body>
+
+    <a href="#main-content" class="docs-skip-link" data-lang="en">Skip to content</a>
+    <a href="#main-content" class="docs-skip-link" data-lang="zh">跳到主内容</a>
+
+    <nav id="navbar" aria-label="Primary">
+        <div class="nav-content">
+            <div class="nav-brand">
+                <img src="images/icon128.png" alt="Aura Tab">
+                <span>Aura Tab</span>
+            </div>
+            <div class="nav-items">
+                <a href="#dock">Dock</a>
+                <a href="#launchpad" data-lang="en">Launchpad</a><a href="#launchpad" data-lang="zh">启动台</a>
+                <a href="#photos" data-lang="en">Photos</a><a href="#photos" data-lang="zh">照片</a>
+                <a href="#settings" data-lang="en">Settings</a><a href="#settings" data-lang="zh">设置</a>
+            </div>
+            <div class="nav-right">
+                <button type="button" class="icon-btn" id="langBtn" aria-label="Switch language">
+                    <span aria-hidden="true">CN</span>
+                </button>
+                <button type="button" class="icon-btn" id="themeBtn" aria-label="Toggle color theme">
+                    <svg class="sun-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="display:none;">
+                        <circle cx="12" cy="12" r="4.5"></circle>
+                        <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                    </svg>
+                    <svg class="moon-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank" class="cta-pill">
+                    <span data-lang="en">Download</span>
+                    <span data-lang="zh">下载</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content">
+    <!-- Hero -->
+    <section class="hero reveal" aria-label="Introduction">
+        <h1 data-lang="en">Your New Tab.<br>Reimagined.</h1>
+        <h1 data-lang="zh">全新标签页。<br>重新想象。</h1>
+        
+        <p data-lang="en">Minimalist, fluid, and native-feeling. Designed for those who appreciate pure macOS aesthetics.</p>
+        <p data-lang="zh">极简、顺滑、原生感。专为追求 macOS 原生美学的你而打造。</p>
+        
+        <div class="hero-links">
+            <a href="https://chromewebstore.google.com/detail/adeamimoopnlcflnpjgcfmebboajlkja" target="_blank">
+                <span data-lang="en">Add to Chrome ›</span>
+                <span data-lang="zh">添加到 Chrome ›</span>
+            </a>
+            <a href="https://github.com/nil-byte/aura-tab" target="_blank">GitHub ›</a>
+        </div>
+
+        <div class="hero-image">
+            <img src="images/desktop.png" alt="Aura Tab">
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="feature-section">
+        <!-- Dock -->
+        <div class="feature-row reveal" id="dock">
+            <div class="feature-text">
+                <h2 data-lang="en">Intelligent Dock.</h2>
+                <h2 data-lang="zh">灵动 Dock。</h2>
+                <p data-lang="en">Access favorite sites with fluid, macOS-style magnification. It feels just like home.</p>
+                <p data-lang="zh">经典的 macOS 放大动效，让每一次交互都顺滑自然。你的常用网站，触手可及。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/dock.png" alt="Dock Feature">
+            </div>
+        </div>
+
+        <!-- Launchpad -->
+        <div class="feature-row reverse reveal" id="launchpad">
+            <div class="feature-text">
+                <h2 data-lang="en">Tidy Launchpad.</h2>
+                <h2 data-lang="zh">整洁启动台。</h2>
+                <p data-lang="en">Organize bookmarks into folders. Keep your digital life clutter-free and elegant.</p>
+                <p data-lang="zh">像管理系统应用一样组织书签。用文件夹归类，还你一个清爽的数字空间。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/launchpad.png" alt="Launchpad Feature">
+            </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="feature-row reveal" id="photos">
+            <div class="feature-text">
+                <h2 data-lang="en">Immersive Photos.</h2>
+                <h2 data-lang="zh">沉浸式照片。</h2>
+                <p data-lang="en">View high-res wallpapers in full screen. Distraction-free, pure aesthetics.</p>
+                <p data-lang="zh">全屏欣赏高清壁纸。无干扰、纯净美学。支持 EXIF 信息，让每一帧都是享受。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/photo.jpg" alt="Photos Feature">
+            </div>
+        </div>
+
+        <!-- Settings -->
+        <div class="feature-row reverse reveal" id="settings">
+            <div class="feature-text">
+                <h2 data-lang="en">Deep Customization.</h2>
+                <h2 data-lang="zh">深度定制。</h2>
+                <p data-lang="en">Blur, search engine, layout... Tune every detail to match your perfect workflow.</p>
+                <p data-lang="zh">毛玻璃强度、搜索引擎、布局偏好... 每一个细节都由你控制。定制属于你的纯净空间。</p>
+            </div>
+            <div class="feature-media">
+                <img src="images/setting.jpg" alt="Settings Feature">
+            </div>
+        </div>
+    </section>
+
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div>Copyright © 2026 Aura Tab</div>
+            <div>Designed for macOS Enthusiasts</div>
+        </div>
+    </footer>
+
+    <script>
+        // Nav scroll: rAF-throttled class toggle (avoid scroll handler doing redundant work)
+        const nav = document.getElementById('navbar');
+        let navScrollQueued = false;
+        function syncNavScrolled() {
+            navScrollQueued = false;
+            if (window.scrollY > 50) nav.classList.add('scrolled');
+            else nav.classList.remove('scrolled');
+        }
+        window.addEventListener('scroll', () => {
+            if (!navScrollQueued) {
+                navScrollQueued = true;
+                requestAnimationFrame(syncNavScrolled);
+            }
+        }, { passive: true });
+
+        // Theme Logic
+        const themeBtn = document.getElementById('themeBtn');
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+        const html = document.documentElement;
+
+        function setTheme(theme) {
+            html.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            if (theme === 'dark') {
+                sunIcon.style.display = 'block'; moonIcon.style.display = 'none';
+            } else {
+                sunIcon.style.display = 'none'; moonIcon.style.display = 'block';
+            }
+        }
+
+        themeBtn.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme') || 'light';
+            setTheme(current === 'light' ? 'dark' : 'light');
+        });
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) setTheme(savedTheme);
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
+
+        // Lang Logic
+        const langBtn = document.getElementById('langBtn');
+        const langShown = langBtn.querySelector('span[aria-hidden="true"]');
+        const body = document.body;
+
+        function applyDocsLang(isZh) {
+            document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+            langBtn.setAttribute('aria-label', isZh ? 'Switch language to English' : '切换到中文');
+        }
+
+        langBtn.addEventListener('click', () => {
+            const isZh = body.classList.toggle('zh');
+            if (langShown) langShown.textContent = isZh ? 'EN' : 'CN';
+            localStorage.setItem('lang', isZh ? 'zh' : 'en');
+            applyDocsLang(isZh);
+        });
+        const storedLang = localStorage.getItem('lang');
+        if (storedLang === 'zh') {
+            body.classList.add('zh');
+            if (langShown) langShown.textContent = 'EN';
+            applyDocsLang(true);
+        } else if (storedLang === 'en') {
+            if (langShown) langShown.textContent = 'CN';
+            applyDocsLang(false);
+        } else if (navigator.language.startsWith('zh')) {
+            body.classList.add('zh');
+            if (langShown) langShown.textContent = 'EN';
+            applyDocsLang(true);
+        } else {
+            if (langShown) langShown.textContent = 'CN';
+            applyDocsLang(false);
+        }
+
+        // Reveal Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
