@@ -5805,6 +5805,10 @@ body:has(.launchpad-overlay.active.paused) .quicklink-dialog-overlay.active {
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.mac-settings-section-content:has(.mac-select.is-open) {
+    overflow: visible;
+}
+
 .mac-settings-row {
     display: flex;
     align-items: center;
