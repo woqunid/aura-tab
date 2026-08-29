@@ -67,6 +67,10 @@ describe('settings UI Safari sync', () => {
         await flushAsync();
 
         expect(container.querySelector('#macBgSource option[value="color"]')).toBeNull();
+        expect(container.querySelector('#macBgSource option[value="unsplash"]')).toBeNull();
+        expect(container.querySelector('#macBgSource option[value="pixabay"]')).toBeNull();
+        expect(container.querySelector('#macBgSource option[value="pexels"]')).toBeNull();
+        expect(container.querySelector('.mac-api-input')).toBeNull();
         expect(container.querySelector('#macColorSection')).toBeNull();
         expect(container.querySelector('#macBrightnessSlider')).toBeNull();
         expect(container.querySelector('#macBrightnessFill')).toBeNull();
@@ -109,6 +113,41 @@ describe('settings UI Safari sync', () => {
         expect(container.querySelector('#macBgSource').value).not.toBe('color');
         expect(settingsRepoMocks.patchBackgroundSettings).not.toHaveBeenCalled();
         expect(settingsRepoMocks.patchSyncSettings).not.toHaveBeenCalled();
+    });
+
+    it('appearance page should hide removed API-backed sources without rewriting stored settings', async () => {
+        setStorageData({
+            uiTheme: 'light',
+            backgroundSettings: {
+                type: 'unsplash',
+                frequency: 'hour',
+                overlay: 10,
+                blur: 2,
+                texture: { type: 'none' },
+                apiKeys: { unsplash: 'stored-key' },
+                showRefreshButton: true,
+                showPhotoInfo: true
+            }
+        }, 'sync');
+
+        const { registerAppearanceContent } = await import('../scripts/domains/settings/content-appearance.js');
+        const win = createWindowStub();
+        const container = document.createElement('div');
+
+        registerAppearanceContent(win);
+        const renderer = win.getRenderer('appearance');
+        renderer(container);
+        await flushAsync();
+
+        expect(container.querySelector('#macBgSource option[value="unsplash"]')).toBeNull();
+        expect(container.querySelector('#macBgSource option[value="pixabay"]')).toBeNull();
+        expect(container.querySelector('#macBgSource option[value="pexels"]')).toBeNull();
+        expect(container.querySelector('.mac-api-input')).toBeNull();
+        expect(container.querySelector('#macBgSource')?.closest('.mac-settings-row')?.classList.contains('hidden')).toBe(false);
+        expect(container.querySelector('#macAutoRefresh')?.closest('.mac-settings-row')?.classList.contains('hidden')).toBe(false);
+        expect(container.querySelector('#macLocalUploadRow')?.classList.contains('hidden')).toBe(true);
+        expect(container.querySelector('#macBgSource').value).not.toBe('unsplash');
+        expect(settingsRepoMocks.patchBackgroundSettings).not.toHaveBeenCalled();
     });
 
     it('dock page should keep dock appearance controls without launchpad density rows', async () => {

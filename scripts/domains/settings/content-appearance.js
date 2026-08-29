@@ -57,17 +57,13 @@ function _ensureAppearanceGlobalListeners() {
   });
 }
 
-const API_KEY_MAX_LENGTH = 256;
-const API_KEY_SOURCES = ["unsplash", "pixabay", "pexels"];
-const ONLINE_SOURCES = [...API_KEY_SOURCES, "bing"];
 const BACKGROUND_APPEARANCE_DEFAULTS = createBackgroundSettingsDefaults();
-const LEGACY_HIDDEN_BACKGROUND_SOURCES = new Set(["color"]);
-
-const API_LINKS = {
-  unsplash: "https://unsplash.com/developers",
-  pixabay: "https://pixabay.com/api/docs/",
-  pexels: "https://www.pexels.com/api/",
-};
+const HIDDEN_BACKGROUND_SOURCES = new Set(["color"]);
+const REMOVED_BACKGROUND_SOURCES = new Set([
+  "unsplash",
+  "pixabay",
+  "pexels",
+]);
 
 export function registerAppearanceContent(window) {
   window.registerContentRenderer("appearance", (container) => {
@@ -103,9 +99,6 @@ export function registerAppearanceContent(window) {
                             <div class="mac-select">
                                 <select class="mac-select-input" id="macBgSource">
                                     <option value="files" data-i18n="settingsBgSourceLocal"></option>
-                                    <option value="unsplash">Unsplash</option>
-                                    <option value="pixabay">Pixabay</option>
-                                    <option value="pexels">Pexels</option>
                                     <option value="bing" data-i18n="settingsBgSourceBing"></option>
                                 </select>
                                 <span class="mac-select-arrow">
@@ -149,64 +142,6 @@ export function registerAppearanceContent(window) {
                             <div class="mac-local-upload-text" data-i18n="settingsBgUploadHint"></div>
                         </div>
                         <div class="mac-local-files-grid" id="macLocalFilesGrid"></div>
-                    </div>
-
-                    <!-- API Key inputs (shown for online sources) -->
-                    <!-- Unsplash API Key -->
-                    <div class="mac-settings-row hidden" id="macUnsplashApiRow">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title">Unsplash <span data-i18n="settingsBgApiKey"></span></span>
-                            <a href="${API_LINKS.unsplash}" target="_blank" class="mac-api-link" data-i18n="settingsBgApiKeyGet"></a>
-                        </div>
-                        <div class="mac-settings-row-control" style="flex: 1; max-width: 240px;">
-                            <div class="mac-api-input-container">
-                                <input type="password" class="mac-api-input" id="macUnsplashApiKey" data-api="unsplash" placeholder="">
-                                <button class="mac-api-toggle-btn" id="macUnsplashApiToggle" type="button">
-                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle class="eye-open" cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pixabay API Key -->
-                    <div class="mac-settings-row hidden" id="macPixabayApiRow">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title">Pixabay <span data-i18n="settingsBgApiKey"></span></span>
-                            <a href="${API_LINKS.pixabay}" target="_blank" class="mac-api-link" data-i18n="settingsBgApiKeyGet"></a>
-                        </div>
-                        <div class="mac-settings-row-control" style="flex: 1; max-width: 240px;">
-                            <div class="mac-api-input-container">
-                                <input type="password" class="mac-api-input" id="macPixabayApiKey" data-api="pixabay" placeholder="">
-                                <button class="mac-api-toggle-btn" id="macPixabayApiToggle" type="button">
-                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle class="eye-open" cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pexels API Key -->
-                    <div class="mac-settings-row hidden" id="macPexelsApiRow">
-                        <div class="mac-settings-row-label">
-                            <span class="mac-settings-row-title">Pexels <span data-i18n="settingsBgApiKey"></span></span>
-                            <a href="${API_LINKS.pexels}" target="_blank" class="mac-api-link" data-i18n="settingsBgApiKeyGet"></a>
-                        </div>
-                        <div class="mac-settings-row-control" style="flex: 1; max-width: 240px;">
-                            <div class="mac-api-input-container">
-                                <input type="password" class="mac-api-input" id="macPexelsApiKey" data-api="pexels" placeholder="">
-                                <button class="mac-api-toggle-btn" id="macPexelsApiToggle" type="button">
-                                    <svg class="eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <path class="eye-open" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                        <circle class="eye-open" cx="12" cy="12" r="3"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -329,8 +264,6 @@ function _bindAppearanceEvents(container) {
     });
   }
 
-  _bindApiKeyEvents(container);
-
   _bindLocalFilesEvents(container);
 
   _bindSliderEvents(
@@ -365,64 +298,6 @@ function _bindAppearanceEvents(container) {
       await patchBackgroundSettings({ texture: { type: texture } });
     });
   }
-}
-
-function _bindApiKeyEvents(container) {
-  const apiInputs = container.querySelectorAll(".mac-api-input");
-  const toggleButtons = container.querySelectorAll(".mac-api-toggle-btn");
-
-  apiInputs.forEach((input) => {
-    const apiType = input.dataset.api;
-
-    input.addEventListener("blur", () => _saveApiKey(input, apiType));
-
-    input.addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        input.blur();
-      }
-    });
-  });
-
-  toggleButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const inputContainer = button.closest(".mac-api-input-container");
-      const input = inputContainer?.querySelector(".mac-api-input");
-      if (!input) return;
-
-      if (input.type === "password") {
-        input.type = "text";
-        input.value = input.dataset.value || "";
-      } else {
-        input.type = "password";
-        input.value = input.dataset.value ? "•".repeat(12) : "";
-      }
-    });
-  });
-}
-
-async function _saveApiKey(input, apiType) {
-  const value = input.value.trim();
-
-  if (value === "") {
-    delete input.dataset.value;
-    input.value = "";
-    toast(t("settingsApiKeyCleared"));
-    await patchBackgroundSettings({ apiKeys: { [apiType]: "" } });
-    return;
-  }
-
-  if (value === input.dataset.value || value === "•".repeat(12)) {
-    return;
-  }
-
-  const safeValue = value.slice(0, API_KEY_MAX_LENGTH);
-  input.dataset.value = safeValue;
-  await patchBackgroundSettings({ apiKeys: { [apiType]: safeValue } });
-
-  if (input.type === "password") {
-    input.value = "•".repeat(12);
-  }
-  toast(t("settingsApiKeySaved"));
 }
 
 function _bindLocalFilesEvents(container) {
@@ -626,37 +501,23 @@ function _bindSliderEvents(
 }
 
 function _updateSourceUI(container, source) {
-  const isLegacyHiddenSource = LEGACY_HIDDEN_BACKGROUND_SOURCES.has(source);
+  const isHiddenSource = HIDDEN_BACKGROUND_SOURCES.has(source);
   const isLocalSource = source === "files";
   const isBingSource = source === "bing";
   const sourceRow = container.querySelector("#macBgSourceRow");
   const autoRefreshRow = container.querySelector("#macAutoRefreshRow");
 
-  // Keep hidden legacy sources runnable without exposing them in the UI again.
+  // Keep hidden stored sources runnable without exposing them in the UI again.
   if (sourceRow) {
-    sourceRow.classList.toggle("hidden", isLegacyHiddenSource);
+    sourceRow.classList.toggle("hidden", isHiddenSource);
   }
   if (autoRefreshRow) {
-    autoRefreshRow.classList.toggle("hidden", isLegacyHiddenSource);
+    autoRefreshRow.classList.toggle("hidden", isHiddenSource);
   }
 
   const localFilesRow = container.querySelector("#macLocalUploadRow");
   if (localFilesRow) {
-    localFilesRow.classList.toggle("hidden", isLegacyHiddenSource || !isLocalSource);
-  }
-
-  const unsplashRow = container.querySelector("#macUnsplashApiRow");
-  const pixabayRow = container.querySelector("#macPixabayApiRow");
-  const pexelsRow = container.querySelector("#macPexelsApiRow");
-
-  if (unsplashRow) {
-    unsplashRow.classList.toggle("hidden", isLegacyHiddenSource || source !== "unsplash");
-  }
-  if (pixabayRow) {
-    pixabayRow.classList.toggle("hidden", isLegacyHiddenSource || source !== "pixabay");
-  }
-  if (pexelsRow) {
-    pexelsRow.classList.toggle("hidden", isLegacyHiddenSource || source !== "pexels");
+    localFilesRow.classList.toggle("hidden", isHiddenSource || !isLocalSource);
   }
 
   const autoRefreshSelect = container.querySelector("#macAutoRefresh");
@@ -664,7 +525,7 @@ function _updateSourceUI(container, source) {
     if (isBingSource) {
       autoRefreshSelect.value = "day";
     }
-    autoRefreshSelect.disabled = isLegacyHiddenSource || isBingSource;
+    autoRefreshSelect.disabled = isHiddenSource || isBingSource;
     syncMacSelect(autoRefreshSelect);
   }
 }
@@ -685,7 +546,10 @@ async function _loadAppearanceSettings(container) {
     const currentSource =
       backgroundSettings.type || BACKGROUND_APPEARANCE_DEFAULTS.type;
     if (bgSourceSelect) {
-      if (!LEGACY_HIDDEN_BACKGROUND_SOURCES.has(currentSource)) {
+      if (
+        !HIDDEN_BACKGROUND_SOURCES.has(currentSource) &&
+        !REMOVED_BACKGROUND_SOURCES.has(currentSource)
+      ) {
         bgSourceSelect.value = currentSource;
       }
       syncMacSelect(bgSourceSelect);
@@ -702,8 +566,6 @@ async function _loadAppearanceSettings(container) {
       autoRefreshSelect.value = effectiveFrequency;
       syncMacSelect(autoRefreshSelect);
     }
-
-    _loadApiKeys(container, backgroundSettings.apiKeys || {});
 
     if (currentSource === "files") {
       await _loadLocalFiles(container);
@@ -740,26 +602,6 @@ async function _loadAppearanceSettings(container) {
   } catch (error) {
     console.error("[MacSettings] Failed to load appearance settings:", error);
   }
-}
-
-function _loadApiKeys(container, apiKeys) {
-  ONLINE_SOURCES.forEach((source) => {
-    const input = container.querySelector(`#mac${_capitalize(source)}ApiKey`);
-    if (!input) return;
-
-    const savedKey = apiKeys[source] || "";
-    if (savedKey) {
-      input.dataset.value = savedKey;
-      input.value = "•".repeat(12);
-    } else {
-      input.value = "";
-      delete input.dataset.value;
-    }
-  });
-}
-
-function _capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function _loadSlider(

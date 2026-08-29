@@ -14,7 +14,7 @@ A beautiful, customizable New Tab page for Chrome/Edge browsers with smart backg
 ## Features
 
 - 🎨 **Smart Backgrounds**: Auto-crop based on screen size with focal point detection, smart aspect ratio adaptation
-- 🖼️ **Multiple Sources**: Support for local files, Unsplash, Pixabay, and Pexels with configurable rotation
+- 🖼️ **Multiple Sources**: Support for local files and Bing Daily backgrounds
 - 🔗 **Quick Links Manager**: Folder support, drag-and-drop sorting, instant search, pagination, and pin to dock
 - 📑 **Bookmark Import**: One-click import from Chrome bookmarks with automatic deduplication
 - 🎬 **Smooth Transitions**: Beautiful fade animations when switching backgrounds with configurable interval
@@ -163,18 +163,13 @@ This project uses the following open-source libraries:
 - [Interact.js](https://interactjs.io) - Drag and drop, resizing and multi-touch gestures
 - [SortableJS](https://sortablejs.github.io/Sortable) - Reorderable drag-and-drop lists
 
-Background image sources:
-
-- [Unsplash](https://unsplash.com) - Beautiful free photos
-- [Pixabay](https://pixabay.com) - Free images and videos
-- [Pexels](https://pexels.com) - Free stock photos
 
 ---
 
 ## 功能特性
 
 - 🎨 **智能背景系统**：根据屏幕尺寸自动裁剪、焦点检测、智能宽高比适配
-- 🖼️ **多源支持**：本地文件、Unsplash、Pixabay、Pexels，可配置轮播
+- 🖼️ **多源支持**：本地文件、Bing 每日壁纸
 - 🔗 **快速链接管理器**：文件夹支持、拖拽排序、即时搜索、分页、固定到 Dock
 - 📑 **书签导入**：一键从 Chrome 书签导入，自动去重
 - 🎬 **平滑过渡动画**：切换背景时淡入淡出，可配置切换间隔
