@@ -281,7 +281,6 @@
     --bg-brightness: 1;
     --bg-overlay: 0.3;
     --bg-fade-in: 400ms;
-    --bg-startup-fade-in: 120ms;
 
     --solid-background: #1a1a2e;
 
@@ -637,9 +636,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transition: none !important;
 }
 
-#first-paint-overlay {
-    contain: strict;
-}
 
 #background-wrapper.hidden {
     opacity: 0;

@@ -10,10 +10,6 @@ async function loadFirstPaintScript() {
     return globalThis.__AURA_FIRST_PAINT__;
 }
 
-function removeOverlay() {
-    document.getElementById('first-paint-overlay')?.remove();
-}
-
 describe('first paint boot script', () => {
     beforeEach(() => {
         localStorage.clear();
@@ -22,7 +18,6 @@ describe('first paint boot script', () => {
         document.documentElement.style.backgroundColor = '';
         document.documentElement.style.backgroundImage = '';
         document.documentElement.removeAttribute('data-first-paint');
-        removeOverlay();
         if (document.body) {
             document.body.style.backgroundColor = '';
             document.body.style.backgroundImage = '';
@@ -30,7 +25,6 @@ describe('first paint boot script', () => {
     });
 
     afterEach(() => {
-        removeOverlay();
     });
 
     it('arms first paint with stored color', async () => {
@@ -84,7 +78,7 @@ describe('first paint boot script', () => {
         expect(localStorage.getItem('aura:firstPaintColor')).toBe('#abcdef');
     });
 
-    it('prefers stored snapshot: creates overlay and applies color', async () => {
+    it('uses the stored snapshot color without rendering the previous wallpaper', async () => {
         const snapshot = {
             v: 1,
             color: '#224466',
@@ -99,23 +93,16 @@ describe('first paint boot script', () => {
 
         await loadFirstPaintScript();
 
-        // Color should be applied from snapshot (not from stored color)
         expect(document.documentElement.style.getPropertyValue('--solid-background')).toBe('#224466');
-
-        // Image should be on the overlay, NOT on html element
-        const overlay = document.getElementById('first-paint-overlay');
-        expect(overlay).toBeTruthy();
-        expect(overlay.style.backgroundImage).toContain('data:image/jpeg;base64,ZmFrZQ==');
-
-        // html element should NOT have background-image (only color)
+        expect(document.getElementById('first-paint-overlay')).toBeNull();
         expect(document.documentElement.style.backgroundImage).toBe('');
     });
 
-    it('does not create overlay when snapshot has no preview image', async () => {
+    it('does not create an overlay when the stored snapshot has an image', async () => {
         const snapshot = {
             v: 1,
             color: '#334455',
-            previewDataUrl: null,
+            previewDataUrl: 'data:image/jpeg;base64,ZmFrZQ==',
             size: 'cover',
             position: '50% 50%',
             repeat: 'no-repeat',
@@ -129,35 +116,10 @@ describe('first paint boot script', () => {
         expect(document.getElementById('first-paint-overlay')).toBeNull();
     });
 
-    it('disarmFirstPaint removes the snapshot overlay immediately', async () => {
-        const snapshot = {
-            v: 1,
-            color: '#224466',
-            previewDataUrl: 'data:image/jpeg;base64,ZmFrZQ==',
-            size: 'cover',
-            position: '50% 50%',
-            repeat: 'no-repeat',
-            ts: Date.now()
-        };
-        localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify(snapshot));
-
-        const api = await loadFirstPaintScript();
-
-        expect(document.getElementById('first-paint-overlay')).toBeTruthy();
-        expect(document.documentElement.dataset.firstPaint).toBe('armed');
-
-        api.disarmFirstPaint();
-
-        // The real wallpaper has already been painted before disarm is called,
-        // so there is no intermediate fade or waiting state.
-        expect(document.documentElement.dataset.firstPaint).toBe('done');
-        expect(document.getElementById('first-paint-overlay')).toBeNull();
-    });
-
-    it('does not schedule a fade when removing the snapshot overlay', async () => {
+    it('disarmFirstPaint completes without scheduling a snapshot fade', async () => {
         vi.useFakeTimers();
         const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame');
-        const snapshot = {
+        localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify({
             v: 1,
             color: '#224466',
             previewDataUrl: 'data:image/jpeg;base64,ZmFrZQ==',
@@ -165,15 +127,14 @@ describe('first paint boot script', () => {
             position: '50% 50%',
             repeat: 'no-repeat',
             ts: Date.now()
-        };
-        localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify(snapshot));
+        }));
 
         const api = await loadFirstPaintScript();
         api.disarmFirstPaint();
 
+        expect(document.documentElement.dataset.firstPaint).toBe('done');
         expect(document.getElementById('first-paint-overlay')).toBeNull();
         expect(rafSpy).not.toHaveBeenCalled();
-        expect(document.documentElement.dataset.firstPaint).toBe('done');
 
         rafSpy.mockRestore();
         vi.useRealTimers();

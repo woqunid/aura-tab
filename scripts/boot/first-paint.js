@@ -113,40 +113,6 @@
         }
     }
 
-    /**
-     * Create a full-screen overlay div for the first-paint snapshot image.
-     * Sits above #background-wrapper (z-index:-1) so it masks the wallpaper
-     * system while loading. disarmFirstPaint() removes it after the real
-     * wallpaper has been painted.
-     */
-    function createFirstPaintOverlay(snapshot) {
-        if (typeof document === 'undefined') return;
-        if (document.getElementById('first-paint-overlay')) return;
-
-        const overlay = document.createElement('div');
-        overlay.id = 'first-paint-overlay';
-
-        const styles = [
-            'position:fixed',
-            'inset:0',
-            'z-index:0',
-            'pointer-events:none',
-            `background-color:${snapshot.color || FALLBACK_COLOR}`
-        ];
-
-        if (snapshot.previewDataUrl) {
-            styles.push(
-                `background-image:url(${snapshot.previewDataUrl})`,
-                `background-size:${snapshot.size || 'cover'}`,
-                `background-position:${snapshot.position || '50% 50%'}`,
-                `background-repeat:${snapshot.repeat || 'no-repeat'}`
-            );
-        }
-
-        overlay.style.cssText = styles.join(';');
-        document.documentElement.appendChild(overlay);
-    }
-
     function applyColor(color, { armed = false } = {}) {
         if (typeof document === 'undefined') {
             return normalizeColor(color) || FALLBACK_COLOR;
@@ -178,12 +144,10 @@
         // Solid color still goes on html/body for fastest first paint
         const appliedColor = applyColor(normalized.color, { armed });
 
-        // Snapshot image is rendered via a dedicated overlay div that sits
-        // above #background-wrapper (z:-1). It is removed once the real
-        // wallpaper has been painted, without animating between the two.
-        if (normalized.previewDataUrl) {
-            createFirstPaintOverlay(normalized);
-        }
+        // Keep first paint to the solid color only. Rendering a persisted
+        // wallpaper snapshot here shows the previous wallpaper first, then
+        // switches to the current one when the background system starts.
+        // That is the visible transition on a newly opened tab.
 
         return appliedColor;
     }
@@ -210,15 +174,9 @@
             document.body.style.removeProperty('background-color');
         }
 
-        const overlay = document.getElementById('first-paint-overlay');
-        if (overlay) {
-            // The caller disarms only after background:applied has waited for
-            // the rendered frames. Remove the snapshot synchronously so the
-            // real wallpaper is revealed directly instead of fading through a
-            // second transition.
-            overlay.remove();
-        }
-
+        // The wallpaper layer is already rendered before this method is
+        // called. Mark first paint complete without replacing an intermediate
+        // snapshot image or running an opacity transition.
         root.dataset.firstPaint = 'done';
     }
 
