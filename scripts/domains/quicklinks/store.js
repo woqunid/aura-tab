@@ -1017,7 +1017,58 @@ class Store {
         this.setPageSizeHint(cols * rows);
     }
     _enforceDockLimit() {
-        this._notify('dockChanged', { dockPins: this.dockPins, reason: 'limit' });
+        const dockLimit = this._getDockLimit();
+        const currentPins = this._getValidUniqueDockPinIds(this.dockPins);
+        const nextPins = [...currentPins];
+
+        if (nextPins.length < dockLimit) {
+            for (const item of this.getAllItems()) {
+                if (!item?._id || item.type === 'folder' || nextPins.includes(item._id)) {
+                    continue;
+                }
+                nextPins.push(item._id);
+                if (nextPins.length >= dockLimit) break;
+            }
+        }
+
+        if (this._arraysEqual(this.dockPins, nextPins)) {
+            this._notify('dockChanged', { dockPins: this.dockPins, reason: 'limit' });
+            return;
+        }
+
+        void this._enqueueWrite(async () => {
+            const committed = await this._commit({
+                includeItemsMap: true,
+                apply: ({ items, dockPins, tags, itemsById }) => {
+                    const candidates = this._collectDockPinCandidatesFromSnapshot(items, itemsById);
+                    const persistedPins = [];
+                    const seen = new Set();
+                    const append = (id) => {
+                        if (!id || seen.has(id) || !candidates.has(id)) return;
+                        seen.add(id);
+                        persistedPins.push(id);
+                    };
+
+                    for (const id of this._normalizeDockPins(dockPins)) {
+                        append(id);
+                    }
+                    if (persistedPins.length < dockLimit) {
+                        for (const entry of this._normalizeItems(items)) {
+                            if (entry === CONFIG.PAGE_BREAK) continue;
+                            append(entry);
+                            if (persistedPins.length >= dockLimit) break;
+                        }
+                    }
+
+                    return { items, dockPins: persistedPins, tags };
+                }
+            });
+            this.dockPins = committed.dockPins;
+            this._notify('dockChanged', { dockPins: this.dockPins, reason: 'limit' });
+        }).catch((error) => {
+            console.error('[Store] Failed to expand Dock items after count change:', error);
+            this._notify('dockChanged', { dockPins: this.dockPins, reason: 'limit' });
+        });
     }
     _handleDockPinsOnlyChange(changes) {
         const nextPins = Array.isArray(changes.quicklinksDockPins.newValue)
