@@ -162,6 +162,32 @@ describe('background transition pipeline', () => {
         });
     });
 
+    it('should make startup layers visible before inserting them', () => {
+        const mediaContainer = document.createElement('div');
+        const wrapper = document.createElement('div');
+        const item = document.createElement('div');
+        const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame');
+        const cleanupSpy = vi.fn();
+        const emitSpy = vi.fn();
+
+        backgroundApplyMethods._commitBackgroundLayer.call({
+            mediaContainer,
+            wrapper: { dataset: {} },
+            settings: { type: 'files', fadein: 400 },
+            _startupPhaseResetTimer: null,
+            _emitBackgroundApplied: emitSpy,
+            _cleanupOldBackgrounds: cleanupSpy
+        }, item, { id: 'startup-visible' }, 'startup');
+
+        expect(item.classList.contains('ready')).toBe(true);
+        expect(mediaContainer.firstElementChild).toBe(item);
+        expect(rafSpy).not.toHaveBeenCalled();
+        expect(emitSpy).toHaveBeenCalledOnce();
+        expect(cleanupSpy).toHaveBeenCalledOnce();
+
+        rafSpy.mockRestore();
+    });
+
     it('should skip preload for online source when frequency is tabs', async () => {
         const prepared = {
             format: 'image',

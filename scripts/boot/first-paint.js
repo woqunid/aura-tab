@@ -116,7 +116,8 @@
     /**
      * Create a full-screen overlay div for the first-paint snapshot image.
      * Sits above #background-wrapper (z-index:-1) so it masks the wallpaper
-     * system while loading. disarmFirstPaint() fades it out smoothly.
+     * system while loading. disarmFirstPaint() removes it after the real
+     * wallpaper has been painted.
      */
     function createFirstPaintOverlay(snapshot) {
         if (typeof document === 'undefined') return;
@@ -178,8 +179,8 @@
         const appliedColor = applyColor(normalized.color, { armed });
 
         // Snapshot image is rendered via a dedicated overlay div that sits
-        // above #background-wrapper (z:-1). disarmFirstPaint() fades it out
-        // smoothly instead of the jarring style removal on html/body.
+        // above #background-wrapper (z:-1). It is removed once the real
+        // wallpaper has been painted, without animating between the two.
         if (normalized.previewDataUrl) {
             createFirstPaintOverlay(normalized);
         }
@@ -210,38 +211,15 @@
         }
 
         const overlay = document.getElementById('first-paint-overlay');
-        if (!overlay) {
-            // Pure-color mode — no overlay was created, done immediately.
-            root.dataset.firstPaint = 'done';
-            return;
+        if (overlay) {
+            // The caller disarms only after background:applied has waited for
+            // the rendered frames. Remove the snapshot synchronously so the
+            // real wallpaper is revealed directly instead of fading through a
+            // second transition.
+            overlay.remove();
         }
 
-        // Enter 'disarming' phase — CSS still suppresses transitions inside
-        // #background-wrapper so the wallpaper doesn't re-animate.
-        root.dataset.firstPaint = 'disarming';
-
-        let cleaned = false;
-        const cleanup = () => {
-            if (cleaned) return;
-            cleaned = true;
-            try { overlay.remove(); } catch { /* ignore */ }
-            root.dataset.firstPaint = 'done';
-        };
-
-        // Wait one frame so the browser applies the new data-first-paint
-        // attribute (disarming) before starting the overlay fade-out.
-        requestAnimationFrame(() => {
-            overlay.style.transition = 'opacity 180ms ease-out';
-            overlay.style.opacity = '0';
-
-            overlay.addEventListener('transitionend', (e) => {
-                if (e.propertyName === 'opacity') cleanup();
-            }, { once: true });
-
-            // Safety net: ensure cleanup even if transitionend never fires
-            // (e.g. prefers-reduced-motion, timing edge cases).
-            setTimeout(cleanup, 300);
-        });
+        root.dataset.firstPaint = 'done';
     }
 
     function persistFirstPaintColor(color) {

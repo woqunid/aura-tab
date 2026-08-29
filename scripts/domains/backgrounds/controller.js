@@ -801,11 +801,29 @@ class BackgroundSystem {
 
     async addLocalFiles(files, { origin } = {}) {
         const results = await localFilesManager.addFiles(files, { origin });
+        const uploadedBackground = results[0];
 
-        if (results.length > 0 && this.settings.type === 'files') {
-            await this._applyBackgroundInternal(results[0], this._getApplyOptions('files'));
+        if (!uploadedBackground) return results;
+
+        // Uploading a local image makes the local-files source the active source.
+        // Keep this explicit so a settings-storage event that is still in flight
+        // cannot prevent the newly uploaded image from becoming the current one.
+        if (this.settings.type !== 'files') {
+            this.settings = { ...this.settings, type: 'files' };
+            await this.saveSettings();
         }
 
+        // Persist the selected flag together with currentBackground. This keeps
+        // a newly opened tab on the uploaded image even before it hydrates the
+        // local-files metadata from IndexedDB.
+        const selectedBackground = uploadedBackground.file
+            ? {
+                ...uploadedBackground,
+                file: { ...uploadedBackground.file, selected: true }
+            }
+            : uploadedBackground;
+
+        await this.applyBackground(selectedBackground);
         return results;
     }
 

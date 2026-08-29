@@ -129,7 +129,7 @@ describe('first paint boot script', () => {
         expect(document.getElementById('first-paint-overlay')).toBeNull();
     });
 
-    it('disarmFirstPaint with overlay enters disarming state and schedules cleanup', async () => {
+    it('disarmFirstPaint removes the snapshot overlay immediately', async () => {
         const snapshot = {
             v: 1,
             color: '#224466',
@@ -148,20 +148,15 @@ describe('first paint boot script', () => {
 
         api.disarmFirstPaint();
 
-        // Should enter disarming state (not done yet, waiting for fade-out)
-        expect(document.documentElement.dataset.firstPaint).toBe('disarming');
-
-        // Overlay should still exist (fade-out hasn't completed)
-        expect(document.getElementById('first-paint-overlay')).toBeTruthy();
+        // The real wallpaper has already been painted before disarm is called,
+        // so there is no intermediate fade or waiting state.
+        expect(document.documentElement.dataset.firstPaint).toBe('done');
+        expect(document.getElementById('first-paint-overlay')).toBeNull();
     });
 
-    it('overlay is removed after safety timeout when transitionend does not fire', async () => {
+    it('does not schedule a fade when removing the snapshot overlay', async () => {
         vi.useFakeTimers();
-        // jsdom's rAF is not controlled by fake timers — replace with a
-        // synchronous shim so the inner callback executes immediately.
-        const origRAF = globalThis.requestAnimationFrame;
-        globalThis.requestAnimationFrame = (cb) => { cb(performance.now()); return 0; };
-
+        const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame');
         const snapshot = {
             v: 1,
             color: '#224466',
@@ -176,18 +171,11 @@ describe('first paint boot script', () => {
         const api = await loadFirstPaintScript();
         api.disarmFirstPaint();
 
-        // rAF fires synchronously → overlay should have opacity set
-        const overlay = document.getElementById('first-paint-overlay');
-        expect(overlay).toBeTruthy();
-        expect(overlay.style.opacity).toBe('0');
-
-        // Advance past the 300ms safety timeout
-        await vi.advanceTimersByTimeAsync(350);
-
         expect(document.getElementById('first-paint-overlay')).toBeNull();
+        expect(rafSpy).not.toHaveBeenCalled();
         expect(document.documentElement.dataset.firstPaint).toBe('done');
 
-        globalThis.requestAnimationFrame = origRAF;
+        rafSpy.mockRestore();
         vi.useRealTimers();
     });
 

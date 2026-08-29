@@ -1113,11 +1113,20 @@ export const backgroundApplyMethods = {
     },
 
     _commitBackgroundLayer(item, background, phase = 'normal') {
+        // The startup image has already been preloaded before it reaches this
+        // point. Make it visible before inserting it so a new tab never shows
+        // an opacity transition while replacing its previous placeholder.
+        if (phase === 'startup') {
+            item.classList.add('ready');
+        }
+
         this.mediaContainer.prepend(item);
         this.wrapper.dataset.type = this.settings.type;
         this.wrapper.dataset.phase = phase;
 
-        requestAnimationFrame(() => { item.classList.add('ready'); });
+        if (phase !== 'startup') {
+            requestAnimationFrame(() => { item.classList.add('ready'); });
+        }
 
         if (phase === 'startup') {
             if (this._startupPhaseResetTimer) {

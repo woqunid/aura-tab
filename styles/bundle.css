@@ -692,9 +692,10 @@ html[data-first-paint='disarming'] #background-media .background-image {
     display: none;
 }
 
+#background-wrapper[data-phase='startup'],
 #background-wrapper[data-phase='startup'] #background-media .background-image,
 #background-wrapper[data-phase='startup'] #background-color {
-    transition-duration: var(--bg-startup-fade-in);
+    transition: none !important;
 }
 
 /* Fade out solid-color placeholder once a wallpaper image is ready.
