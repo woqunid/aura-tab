@@ -149,7 +149,7 @@ export class LayoutManager extends DisposableComponent {
 
         if (matchesShortcutEvent(e, this._shortcuts.focusSearch)) {
             e.preventDefault();
-            this.toggleSearch(true, true, { focus: true });
+            this.toggleSearch(undefined, true, { focus: true });
             return;
         }
 

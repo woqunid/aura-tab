@@ -48,7 +48,7 @@ describe('layout shortcuts', () => {
         expect(mocks.launchpadToggle).toHaveBeenCalledWith({ focusSearch: true });
     });
 
-    it('focuses search with configured shortcut', () => {
+    it('toggles search with configured shortcut', () => {
         const manager = new LayoutManager();
         manager._shortcuts = {
             focusSearch: 'Alt+KeyL',
@@ -60,7 +60,7 @@ describe('layout shortcuts', () => {
         manager._handleKeydown(event);
 
         expect(event.defaultPrevented).toBe(true);
-        expect(toggleSearchSpy).toHaveBeenCalledWith(true, true, { focus: true });
+        expect(toggleSearchSpy).toHaveBeenCalledWith(undefined, true, { focus: true });
     });
 
     it('rolls back optimistic search visibility when persistence fails', async () => {
