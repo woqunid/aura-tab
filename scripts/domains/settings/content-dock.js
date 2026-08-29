@@ -108,6 +108,11 @@ function createSections() {
         "settingsQuicklinksShowBackdrop",
         KEYS.showBackdrop,
       ),
+      createToggleRow(
+        "macQuicklinksHideHoverNames",
+        "settingsQuicklinksHideHoverNames",
+        KEYS.hideHoverNames,
+      ),
       {
         type: "slider",
         id: "macMagnifyScale",

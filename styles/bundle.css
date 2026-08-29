@@ -1861,6 +1861,10 @@ html[data-first-paint='disarming'] #background-media .background-image {
     transform: translateX(-50%) translateY(0);
 }
 
+.quicklinks-container.hide-hover-names .quicklink-title {
+    display: none;
+}
+
 .launchpad-btn:hover {
     background: var(--overlay-medium);
     color: var(--text-primary);

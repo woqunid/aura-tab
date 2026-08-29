@@ -233,5 +233,6 @@
     "contextRemoveFromFolder": "從資料夾移出",
     "toastFolderCreated": "資料夾已建立",
     "confirm": "確認",
-    "linkManagerSectionDesc": "在這裡整理目前的快捷連結與資料夾。"
+    "linkManagerSectionDesc": "在這裡整理目前的快捷連結與資料夾。",
+    "settingsQuicklinksHideHoverNames": "隱藏懸浮名稱"
 }

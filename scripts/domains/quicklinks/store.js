@@ -11,6 +11,7 @@ export const QUICKLINKS_SYNC_KEYS = Object.freeze({
     magnifyScale: 'quicklinksMagnifyScale',
     dockPosition: 'quicklinksDockPosition',
     showBackdrop: 'quicklinksShowBackdrop',
+    hideHoverNames: 'quicklinksHideHoverNames',
     gridColumns: 'launchpadGridColumns',
     gridRows: 'launchpadGridRows'
 });
@@ -32,6 +33,7 @@ export const QUICKLINKS_STORE_DEFAULTS = Object.freeze({
     magnifyScale: QUICKLINKS_BOUNDS.magnifyScale.default,
     dockPosition: 'bottom',
     showBackdrop: true,
+    hideHoverNames: true,
     launchpadGridColumns: QUICKLINKS_BOUNDS.gridColumns.default,
     launchpadGridRows: QUICKLINKS_BOUNDS.gridRows.default
 });
@@ -44,6 +46,7 @@ export const QUICKLINKS_SYNC_DEFAULTS = Object.freeze({
     [QUICKLINKS_SYNC_KEYS.magnifyScale]: QUICKLINKS_STORE_DEFAULTS.magnifyScale,
     [QUICKLINKS_SYNC_KEYS.dockPosition]: QUICKLINKS_STORE_DEFAULTS.dockPosition,
     [QUICKLINKS_SYNC_KEYS.showBackdrop]: QUICKLINKS_STORE_DEFAULTS.showBackdrop,
+    [QUICKLINKS_SYNC_KEYS.hideHoverNames]: QUICKLINKS_STORE_DEFAULTS.hideHoverNames,
     [QUICKLINKS_SYNC_KEYS.gridColumns]: QUICKLINKS_STORE_DEFAULTS.launchpadGridColumns,
     [QUICKLINKS_SYNC_KEYS.gridRows]: QUICKLINKS_STORE_DEFAULTS.launchpadGridRows
 });
@@ -998,6 +1001,7 @@ class Store {
             settingsPatch.dockPosition = normalizeQuicklinksDockPosition(changes[keys.dockPosition].newValue);
         }
         if (changes[keys.showBackdrop]) settingsPatch.showBackdrop = changes[keys.showBackdrop].newValue;
+        if (changes[keys.hideHoverNames]) settingsPatch.hideHoverNames = changes[keys.hideHoverNames].newValue;
         if (changes[keys.gridColumns]) settingsPatch.launchpadGridColumns = clampLaunchpadGridColumns(changes[keys.gridColumns].newValue);
         if (changes[keys.gridRows]) settingsPatch.launchpadGridRows = clampLaunchpadGridRows(changes[keys.gridRows].newValue);
         if (Object.keys(settingsPatch).length === 0) return;
@@ -1106,6 +1110,7 @@ class Store {
                 magnifyScale: clampQuicklinksMagnifyScale(data[keys.magnifyScale]),
                 dockPosition: normalizeQuicklinksDockPosition(data[keys.dockPosition]),
                 showBackdrop: data[keys.showBackdrop],
+                hideHoverNames: data[keys.hideHoverNames],
                 launchpadGridColumns: clampLaunchpadGridColumns(data[keys.gridColumns]),
                 launchpadGridRows: clampLaunchpadGridRows(data[keys.gridRows])
             };

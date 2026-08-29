@@ -134,6 +134,7 @@ class Dock extends DisposableComponent {
         }
         const showBackdrop = store.settings.showBackdrop !== false;
         this.container.classList.toggle('no-backdrop', !showBackdrop);
+        this.container.classList.toggle('hide-hover-names', store.settings.hideHoverNames !== false);
     }
     _bindEvents() {
         if (this.addBtn) {

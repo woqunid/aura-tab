@@ -233,5 +233,6 @@
     "contextRemoveFromFolder": "Remove from Folder",
     "toastFolderCreated": "Folder created",
     "confirm": "Confirm",
-    "linkManagerSectionDesc": "Organize your current quick links and folders here."
+    "linkManagerSectionDesc": "Organize your current quick links and folders here.",
+    "settingsQuicklinksHideHoverNames": "Hide hover names"
 }

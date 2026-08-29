@@ -13,7 +13,8 @@ export async function freshDockWithMocks({
             newTab: true,
             dockCount: 5,
             magnifyScale,
-            showBackdrop: true
+            showBackdrop: true,
+            hideHoverNames: true
         },
         subscribe: vi.fn(() => () => {}),
         getDockItems: vi.fn(() => [
