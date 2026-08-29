@@ -938,6 +938,9 @@ class Store {
             });
         }
         this._reconcileDockPins();
+        // Existing installations may already have a larger dockCount but an
+        // older, shorter pin list. Init cannot rely on a storage change event.
+        this._enforceDockLimit();
         this._initStorageListener();
     }
     _initStorageListener() {

@@ -58,6 +58,20 @@ describe('Store Dock count behavior', () => {
         store.destroy?.();
     });
 
+    it('fills an existing underfilled Dock during initialization', async () => {
+        seedItems(12, 12, 5);
+        const store = await freshStore();
+
+        await store.init();
+
+        await vi.waitFor(() => {
+            expect(store.getDockItems()).toHaveLength(12);
+        });
+        expect(getStorageData().quicklinksDockPins).toHaveLength(12);
+
+        store.destroy?.();
+    });
+
     it('does not add folders to fill Dock capacity', async () => {
         seedItems(4, 5, 1);
         const store = await freshStore();
