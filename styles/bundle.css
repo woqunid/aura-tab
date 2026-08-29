@@ -323,10 +323,13 @@
     --spotlight-glass-border-focus: var(--glass-tier-3-border-focus);
     --spotlight-glass-blur: var(--blur-2xl);
     --spotlight-glass-saturate: var(--glass-saturate);
-    --spotlight-glass-radius: var(--radius-xl);
+    --spotlight-glass-radius: var(--radius-full);
+    --spotlight-width: 520px;
+    --spotlight-viewport-gap: 32px;
+    --spotlight-top-offset: 24px;
 
-    --spotlight-height: 58px;
-    --spotlight-icon-size: 20px;
+    --spotlight-height: 46px;
+    --spotlight-icon-size: 18px;
     --spotlight-glow-color: var(--surface-glass);
     --spotlight-glow-size: 80px;
 
@@ -763,11 +766,6 @@ html[data-first-paint='disarming'] #background-media .background-image {
     will-change: transform;
 }
 
-.layout-container.search-active {
-
-    transform: translate(-50%, calc(-50% - 12vh));
-}
-
 .clock-container {
     background: transparent;
     border: none;
@@ -1030,10 +1028,11 @@ html[data-first-paint='disarming'] #background-media .background-image {
 }
 
 .search-container {
-    width: 100%;
-    max-width: 680px;
+    top: var(--spotlight-top-offset);
+    left: 50%;
+    width: min(var(--spotlight-width), calc(100vw - var(--spotlight-viewport-gap)));
     height: var(--spotlight-height);
-    margin-top: var(--space-5);
+    margin-top: 0;
 
     background: var(--spotlight-glass-bg);
     -webkit-backdrop-filter: blur(var(--spotlight-glass-blur)) saturate(var(--spotlight-glass-saturate)) brightness(var(--glass-brightness));
@@ -1052,22 +1051,23 @@ html[data-first-paint='disarming'] #background-media .background-image {
         var(--shadow-glass-inset);
 
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translate(-50%, 12px) scale(0.98);
     pointer-events: none;
 
     transition:
         opacity var(--duration-normal) var(--ease-spring),
         transform var(--duration-normal) var(--ease-spring);
 
-    position: relative;
+    position: fixed;
     cursor: text;
+    z-index: var(--z-fixed);
 
     will-change: transform, opacity;
 }
 
 .search-container.show {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, 0) scale(1);
     pointer-events: auto;
 }
 
@@ -1108,7 +1108,7 @@ html[data-first-paint='disarming'] #background-media .background-image {
     box-shadow:
         var(--shadow-elevation-3),
         var(--shadow-glass-inset);
-    transform: translateY(-1px) scale(1);
+    transform: translate(-50%, -1px) scale(1);
 }
 
 .search-container:hover:not(.focused)::before {
@@ -1132,7 +1132,7 @@ html[data-first-paint='disarming'] #background-media .background-image {
         0 0 var(--spotlight-glow-size) var(--spotlight-glow-color),
         var(--shadow-elevation-3),
         var(--shadow-glass-inset);
-    transform: translateY(-2px) scale(1);
+    transform: translate(-50%, -2px) scale(1);
 }
 
 .search-container.focused::before {
@@ -1150,7 +1150,7 @@ html[data-first-paint='disarming'] #background-media .background-image {
     border: none;
     background: transparent;
     font-family: var(--font-system);
-    font-size: var(--text-lg);
+    font-size: var(--text-base);
     font-weight: 400;
     letter-spacing: -0.022em;
     color: rgba(255, 255, 255, 0.95);
@@ -1197,8 +1197,8 @@ html[data-first-paint='disarming'] #background-media .background-image {
 }
 
 .search-engine-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     border: none;
     background: transparent;
@@ -1345,8 +1345,8 @@ html[data-first-paint='disarming'] #background-media .background-image {
 
 @media screen and (max-width: 768px) {
     .search-container {
-        max-width: calc(100% - var(--space-8));
-        height: 52px;
+        top: 16px;
+        height: 44px;
     }
 
     .search-container .search-input {

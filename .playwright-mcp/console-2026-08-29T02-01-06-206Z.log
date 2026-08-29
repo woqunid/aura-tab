@@ -1,0 +1,23 @@
+[     560ms] [ERROR] [WindowDragController] Failed to init interact.js TypeError: Cannot read properties of undefined (reading 'getURL')
+    at http://127.0.0.1:4173/scripts/platform/window-interaction.js:13:37
+    at new Promise (<anonymous>)
+    at getInteract (http://127.0.0.1:4173/scripts/platform/window-interaction.js:6:23)
+    at WindowDragController._init (http://127.0.0.1:4173/scripts/platform/window-interaction.js:104:36)
+    at new WindowDragController (http://127.0.0.1:4173/scripts/platform/window-interaction.js:97:34)
+    at MacSettingsWindow._setupDragAndResize (http://127.0.0.1:4173/scripts/platform/mac-window-base.js:209:36)
+    at MacSettingsWindow._initializeBase (http://127.0.0.1:4173/scripts/platform/mac-window-base.js:120:14)
+    at MacSettingsWindow._init (http://127.0.0.1:4173/scripts/domains/settings/window.js:129:19)
+    at new MacSettingsWindow (http://127.0.0.1:4173/scripts/domains/settings/window.js:73:14)
+    at getMacSettingsWindow (http://127.0.0.1:4173/scripts/domains/settings/window.js:287:21) @ http://127.0.0.1:4173/scripts/platform/window-interaction.js:153
+[     563ms] [ERROR] [i18n] Failed to load language setting: TypeError: Cannot read properties of undefined (reading 'sync')
+    at getSyncSettings (http://127.0.0.1:4173/scripts/platform/settings-contract.js:100:27)
+    at initLanguage (http://127.0.0.1:4173/scripts/platform/i18n.js:145:88)
+    at main (http://127.0.0.1:4173/scripts/main.js:68:11) @ http://127.0.0.1:4173/scripts/platform/i18n.js:147
+[     585ms] [WARNING] [Aura Tab] theme init failed: TypeError: Cannot read properties of undefined (reading 'sync')
+    at getSyncSettings (http://127.0.0.1:4173/scripts/platform/settings-contract.js:100:27)
+    at initTheme (http://127.0.0.1:4173/scripts/main.js:24:35)
+    at main (http://127.0.0.1:4173/scripts/main.js:69:11) @ http://127.0.0.1:4173/scripts/main.js:26
+[     586ms] [ERROR] [Aura Tab] bootstrap failed: TypeError: Cannot read properties of undefined (reading 'onChanged')
+    at initTheme (http://127.0.0.1:4173/scripts/main.js:30:20)
+    at async main (http://127.0.0.1:4173/scripts/main.js:69:5) @ http://127.0.0.1:4173/scripts/main.js:102
+[     596ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:4173/favicon.ico:0
