@@ -129,6 +129,39 @@ describe('background transition pipeline', () => {
         });
     });
 
+    it('should use a single full-resolution layer for local startup backgrounds', async () => {
+        const prepared = {
+            format: 'image',
+            id: 'local-startup-1',
+            urls: {
+                full: 'blob:local-startup-full.jpg',
+                small: 'blob:local-startup-small.jpg'
+            }
+        };
+
+        const system = {
+            settings: { type: 'files', smartCropEnabled: true },
+            _prepareBackgroundForDisplay: vi.fn(async () => prepared),
+            _applyBackgroundInternal: vi.fn(async () => {}),
+            _saveBackgroundState: vi.fn(async () => {}),
+            preloadNextBackground: vi.fn()
+        };
+
+        await runBackgroundTransition(system, {
+            background: prepared,
+            type: 'files',
+            phase: 'startup',
+            updateTimestamp: false,
+            save: false,
+            preload: false
+        });
+
+        expect(system._applyBackgroundInternal).toHaveBeenCalledWith(prepared, {
+            renderMode: 'single-stage',
+            phase: 'startup'
+        });
+    });
+
     it('should skip preload for online source when frequency is tabs', async () => {
         const prepared = {
             format: 'image',

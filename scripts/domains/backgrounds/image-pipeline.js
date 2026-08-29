@@ -14,8 +14,8 @@ import { shouldRefreshBackground } from './refresh-policy.js';
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
 const FIRST_PAINT_STORAGE_KEY = 'aura:firstPaintColor';
 const FIRST_PAINT_SNAPSHOT_STORAGE_KEY = 'aura:firstPaintSnapshot';
-const FIRST_PAINT_PREVIEW_WIDTH = 48;
-const FIRST_PAINT_PREVIEW_HEIGHT = 27;
+const FIRST_PAINT_PREVIEW_WIDTH = 640;
+const FIRST_PAINT_PREVIEW_HEIGHT = 360;
 const FIRST_PAINT_SNAPSHOT_VERSION = 1;
 const FIRST_PAINT_IMAGE_LOAD_TIMEOUT_MS = 5000;
 const CACHE_INDEX_STORAGE_KEY = 'aura:bgCacheIndex:v1';
@@ -980,6 +980,7 @@ export async function runBackgroundTransition(system, options = {}) {
     const prepared = await system._prepareBackgroundForDisplay(background, { timeoutMs });
     const applyOptions = {
         ...getApplyOptions(system.settings, type),
+        ...(phase === 'startup' ? { renderMode: 'single-stage' } : {}),
         ...(Number.isFinite(imageLoadTimeoutMs) && imageLoadTimeoutMs > 0
             ? { imageLoadTimeoutMs: Math.floor(imageLoadTimeoutMs) }
             : {}),
@@ -1021,8 +1022,10 @@ export const backgroundApplyMethods = {
         const size = detectBackgroundSize();
         const primaryUrl = background.urls[size] || background.urls.full;
         const fallbackUrl = background.urls.small || background.urls.full;
-        const renderMode = options?.renderMode === 'single-stage' ? 'single-stage' : 'progressive';
         const phase = options?.phase === 'startup' ? 'startup' : 'normal';
+        const renderMode = phase === 'startup' || options?.renderMode === 'single-stage'
+            ? 'single-stage'
+            : 'progressive';
         const imageLoadTimeoutMs = Number.isFinite(options?.imageLoadTimeoutMs) && options.imageLoadTimeoutMs > 0
             ? Math.floor(options.imageLoadTimeoutMs)
             : (phase === 'startup' ? 6500 : 45000);
