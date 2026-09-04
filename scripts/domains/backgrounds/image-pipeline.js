@@ -14,14 +14,16 @@ import { shouldRefreshBackground } from './refresh-policy.js';
 const FIRST_PAINT_API_KEY = '__AURA_FIRST_PAINT__';
 const FIRST_PAINT_STORAGE_KEY = 'aura:firstPaintColor';
 const FIRST_PAINT_SNAPSHOT_STORAGE_KEY = 'aura:firstPaintSnapshot';
-const FIRST_PAINT_PREVIEW_WIDTH = 640;
-const FIRST_PAINT_PREVIEW_HEIGHT = 360;
+const FIRST_PAINT_TARGET_STORAGE_KEY = 'aura:firstPaintTarget';
+const FIRST_PAINT_PREVIEW_MAX_WIDTH = 1280;
+const FIRST_PAINT_PREVIEW_MAX_HEIGHT = 720;
 const FIRST_PAINT_SNAPSHOT_VERSION = 1;
 const FIRST_PAINT_IMAGE_LOAD_TIMEOUT_MS = 5000;
 const CACHE_INDEX_STORAGE_KEY = 'aura:bgCacheIndex:v1';
 const CACHE_INDEX_VERSION = 1;
 
 let _firstPaintSnapshotChain = Promise.resolve();
+let _firstPaintSnapshotSequence = 0;
 
 function canFetchFromProvider(provider, apiKey) {
     return Boolean(provider) && (provider.requiresApiKey === false || Boolean(apiKey));
@@ -93,20 +95,58 @@ function loadImageForPreview(url, timeoutMs = FIRST_PAINT_IMAGE_LOAD_TIMEOUT_MS)
     });
 }
 
+function createFirstPaintPreviewFromImage(img) {
+    if (!img) return null;
+
+    try {
+        const canvas = document.createElement('canvas');
+        const sourceWidth = img.naturalWidth;
+        const sourceHeight = img.naturalHeight;
+        if (!sourceWidth || !sourceHeight) return null;
+
+        const scale = Math.min(
+            1,
+            FIRST_PAINT_PREVIEW_MAX_WIDTH / sourceWidth,
+            FIRST_PAINT_PREVIEW_MAX_HEIGHT / sourceHeight
+        );
+        canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+        const ctx = canvas.getContext('2d', { alpha: false });
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', 0.72);
+    } catch {
+        return null;
+    }
+}
+
 async function createFirstPaintPreviewDataUrl(sourceImageUrl) {
     if (!sourceImageUrl) return null;
 
     try {
         const img = await loadImageForPreview(sourceImageUrl, FIRST_PAINT_IMAGE_LOAD_TIMEOUT_MS);
-        const canvas = document.createElement('canvas');
-        canvas.width = FIRST_PAINT_PREVIEW_WIDTH;
-        canvas.height = FIRST_PAINT_PREVIEW_HEIGHT;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        if (!ctx) return null;
-        ctx.drawImage(img, 0, 0, FIRST_PAINT_PREVIEW_WIDTH, FIRST_PAINT_PREVIEW_HEIGHT);
-        return canvas.toDataURL('image/jpeg', 0.62);
+        return createFirstPaintPreviewFromImage(img);
     } catch {
         return null;
+    }
+}
+
+function persistFirstPaintTarget(backgroundId) {
+    const targetId = typeof backgroundId === 'string' ? backgroundId : null;
+
+    const firstPaintApi = globalThis[FIRST_PAINT_API_KEY];
+    if (firstPaintApi && typeof firstPaintApi.persistFirstPaintTarget === 'function') {
+        try {
+            firstPaintApi.persistFirstPaintTarget(targetId);
+        } catch {
+        }
+        return;
+    }
+
+    try {
+        if (typeof localStorage === 'undefined') return;
+        localStorage.setItem(FIRST_PAINT_TARGET_STORAGE_KEY, targetId || '');
+    } catch {
     }
 }
 
@@ -133,24 +173,44 @@ function queueFirstPaintSnapshot(detail) {
     const color = typeof detail?.color === 'string' ? detail.color.trim() : '';
     if (!color) return;
 
+    const sequence = ++_firstPaintSnapshotSequence;
     const imageUrl = extractCssImageUrl(detail.image);
+    const knownPreviewDataUrl = typeof detail.previewDataUrl === 'string'
+        ? detail.previewDataUrl
+        : null;
     const task = async () => {
-        const previewDataUrl = imageUrl ? await createFirstPaintPreviewDataUrl(imageUrl) : null;
-        const snapshot = {
+        const previewDataUrl = knownPreviewDataUrl || (imageUrl
+            ? await createFirstPaintPreviewDataUrl(imageUrl)
+            : null);
+
+        // A slower snapshot from an older wallpaper must never overwrite the
+        // latest applied wallpaper's snapshot.
+        if (sequence !== _firstPaintSnapshotSequence) return;
+
+        persistFirstPaintSnapshot({
             v: FIRST_PAINT_SNAPSHOT_VERSION,
+            backgroundId: detail.backgroundId,
             color,
             previewDataUrl,
             size: sanitizeStyleValue(detail.size, 'cover'),
             position: sanitizeStyleValue(detail.position, '50% 50%'),
             repeat: sanitizeStyleValue(detail.repeat, 'no-repeat'),
             ts: Date.now()
-        };
-        persistFirstPaintSnapshot(snapshot);
+        });
     };
 
     const enqueueTask = () => {
         _firstPaintSnapshotChain = _firstPaintSnapshotChain.then(task).catch(() => { });
     };
+
+    // The image used by the background has already been decoded in the normal
+    // apply path. Queueing this snapshot immediately avoids the idle callback +
+    // second image load window in which a newly opened tab can fall back to a
+    // solid color.
+    if (knownPreviewDataUrl) {
+        enqueueTask();
+        return;
+    }
 
     if (typeof requestIdleCallback === 'function') {
         requestIdleCallback(() => enqueueTask(), { timeout: 1200 });
@@ -1047,10 +1107,10 @@ export const backgroundApplyMethods = {
             }
         };
 
-        const mountLayer = (url, scope) => {
+        const mountLayer = (url, scope, previewDataUrl = null) => {
             const item = this.createImageElement(url, background);
             this._attachBlobMetadata(item, url, scope);
-            this._commitBackgroundLayer(item, background, phase);
+            this._commitBackgroundLayer(item, background, phase, previewDataUrl);
             return item;
         };
 
@@ -1069,8 +1129,9 @@ export const backgroundApplyMethods = {
                 try {
                     fallbackScope = `${baseScope}-f-${applyToken}`;
                     const fallbackBlobUrl = await getBlobUrl(fallbackUrl, fallbackScope);
-                    await preloadImage(fallbackBlobUrl, previewLoadTimeoutMs);
-                    previewItem = mountLayer(fallbackBlobUrl, fallbackScope);
+                    const fallbackImage = await preloadImage(fallbackBlobUrl, previewLoadTimeoutMs);
+                    const fallbackPreviewDataUrl = createFirstPaintPreviewFromImage(fallbackImage);
+                    previewItem = mountLayer(fallbackBlobUrl, fallbackScope, fallbackPreviewDataUrl);
                 } catch (fallbackError) {
                     logWithDedup('warn', '[Background] Preview load failed, waiting for primary...', fallbackError, {
                         skipIfRecoverable: true,
@@ -1081,13 +1142,14 @@ export const backgroundApplyMethods = {
 
             primaryBlobUrl = await getBlobUrl(primaryUrl, primaryScope);
             const img = await preloadImage(primaryBlobUrl, imageLoadTimeoutMs);
+            const previewDataUrl = createFirstPaintPreviewFromImage(img);
 
             // Extract average color if missing.
             if (!background.color && img.complete) {
                 try { background.color = getAverageColor(img); } catch { }
             }
 
-            mountLayer(primaryBlobUrl, primaryScope);
+            mountLayer(primaryBlobUrl, primaryScope, previewDataUrl);
 
         } catch (error) {
             // If preview is already visible, keep it and suppress the error.
@@ -1112,7 +1174,7 @@ export const backgroundApplyMethods = {
         item.dataset.blobScope = scope;
     },
 
-    _commitBackgroundLayer(item, background, phase = 'normal') {
+    _commitBackgroundLayer(item, background, phase = 'normal', previewDataUrl = null) {
         // The startup image has already been preloaded before it reaches this
         // point. Make it visible before inserting it so a new tab never shows
         // an opacity transition while replacing its previous placeholder.
@@ -1146,7 +1208,8 @@ export const backgroundApplyMethods = {
             type: this.settings.type,
             background,
             element: item,
-            color: background?.color || null
+            color: background?.color || null,
+            previewDataUrl
         });
         this._cleanupOldBackgrounds();
     },
@@ -1176,10 +1239,14 @@ export const backgroundApplyMethods = {
                 root.style.setProperty('--ct-wallpaper-color', detail.color);
             }
             if (explicitColor) {
+                const backgroundId = typeof payload?.background?.id === 'string' ? payload.background.id : null;
+                persistFirstPaintTarget(backgroundId);
                 persistFirstPaintColor(explicitColor);
                 queueFirstPaintSnapshot({
                     ...detail,
-                    color: explicitColor
+                    backgroundId,
+                    color: explicitColor,
+                    previewDataUrl: payload?.previewDataUrl || null
                 });
             }
 

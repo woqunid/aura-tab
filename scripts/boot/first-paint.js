@@ -2,10 +2,13 @@
     const API_KEY = '__AURA_FIRST_PAINT__';
     const STORAGE_KEY = 'aura:firstPaintColor';
     const SNAPSHOT_STORAGE_KEY = 'aura:firstPaintSnapshot';
+    const TARGET_STORAGE_KEY = 'aura:firstPaintTarget';
     const FALLBACK_COLOR = '#1a1a2e';
     const SNAPSHOT_VERSION = 1;
     const SNAPSHOT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
     const SAFE_STYLE_STRING = /^[a-zA-Z0-9%(),.\s/#-]+$/;
+    const SAFE_BACKGROUND_ID = /^[a-zA-Z0-9_-]{1,200}$/;
+    const SAFE_PREVIEW_DATA_URL = /^data:image\/(?:bmp|gif|jpeg|jpg|png|webp);base64,[a-z0-9+/=]+$/i;
 
     function normalizeColor(input) {
         if (typeof input !== 'string') return null;
@@ -47,6 +50,22 @@
         }
     }
 
+    function normalizeBackgroundId(input) {
+        if (typeof input !== 'string') return null;
+        const value = input.trim();
+        return SAFE_BACKGROUND_ID.test(value) ? value : null;
+    }
+
+    function readStoredTarget() {
+        try {
+            if (typeof localStorage === 'undefined') return undefined;
+            const value = localStorage.getItem(TARGET_STORAGE_KEY);
+            return value === null ? undefined : normalizeBackgroundId(value);
+        } catch {
+            return undefined;
+        }
+    }
+
     function normalizeStyleString(input, fallback) {
         if (typeof input !== 'string') return fallback;
         const value = input.trim();
@@ -58,8 +77,7 @@
         if (typeof input !== 'string') return null;
         const value = input.trim();
         if (!value || value.length > 2_000_000) return null;
-        if (!value.startsWith('data:image/')) return null;
-        return value;
+        return SAFE_PREVIEW_DATA_URL.test(value) ? value : null;
     }
 
     function normalizeSnapshot(input) {
@@ -75,6 +93,7 @@
 
         return {
             v: SNAPSHOT_VERSION,
+            backgroundId: normalizeBackgroundId(input.backgroundId),
             color,
             previewDataUrl,
             size,
@@ -135,20 +154,49 @@
         return safeColor;
     }
 
+    function isSnapshotForTarget(snapshot, target) {
+        if (target === undefined) return true;
+        if (target === null) return !snapshot.previewDataUrl;
+        return snapshot.backgroundId === target;
+    }
+
+    function createFirstPaintOverlay(snapshot) {
+        if (typeof document === 'undefined') return;
+        if (!snapshot.previewDataUrl) return;
+        if (document.getElementById('first-paint-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'first-paint-overlay';
+
+        overlay.style.position = 'fixed';
+        overlay.style.inset = '0';
+        overlay.style.zIndex = '0';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.contain = 'strict';
+        overlay.style.backgroundColor = snapshot.color;
+        overlay.style.backgroundImage = `url("${snapshot.previewDataUrl}")`;
+        overlay.style.backgroundSize = snapshot.size;
+        overlay.style.backgroundPosition = snapshot.position;
+        overlay.style.backgroundRepeat = snapshot.repeat;
+
+        document.documentElement.appendChild(overlay);
+    }
+
     function applySnapshot(snapshot, { armed = false } = {}) {
         const normalized = normalizeSnapshot(snapshot);
         if (!normalized) {
             return applyColor(readStoredColor(), { armed });
         }
 
-        // Solid color still goes on html/body for fastest first paint
+        const target = readStoredTarget();
+        if (!isSnapshotForTarget(normalized, target)) {
+            return applyColor(readStoredColor(), { armed });
+        }
+
+        // The preview image is used for the first visual frame. The background
+        // system removes this overlay only after the full wallpaper has painted.
         const appliedColor = applyColor(normalized.color, { armed });
-
-        // Keep first paint to the solid color only. Rendering a persisted
-        // wallpaper snapshot here shows the previous wallpaper first, then
-        // switches to the current one when the background system starts.
-        // That is the visible transition on a newly opened tab.
-
+        createFirstPaintOverlay(normalized);
         return appliedColor;
     }
 
@@ -165,18 +213,16 @@
         const root = document.documentElement;
         if (!root) return;
 
-        // Clear html/body inline background-color — the CSS variable
-        // --solid-background (already set to the correct value by applyColor)
-        // takes over via body { background-color: var(--solid-background) },
-        // so there is zero visual change.
         root.style.removeProperty('background-color');
         if (document.body) {
             document.body.style.removeProperty('background-color');
         }
 
-        // The wallpaper layer is already rendered before this method is
-        // called. Mark first paint complete without replacing an intermediate
-        // snapshot image or running an opacity transition.
+        const overlay = document.getElementById('first-paint-overlay');
+        if (overlay) {
+            overlay.remove();
+        }
+
         root.dataset.firstPaint = 'done';
     }
 
@@ -188,9 +234,21 @@
         return writeStoredSnapshot(snapshot);
     }
 
+    function persistFirstPaintTarget(backgroundId) {
+        const safeId = normalizeBackgroundId(backgroundId);
+        try {
+            if (typeof localStorage === 'undefined') return false;
+            localStorage.setItem(TARGET_STORAGE_KEY, safeId || '');
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     const api = {
         STORAGE_KEY,
         SNAPSHOT_STORAGE_KEY,
+        TARGET_STORAGE_KEY,
         FALLBACK_COLOR,
         normalizeColor,
         normalizeSnapshot,
@@ -198,7 +256,8 @@
         armFirstPaint,
         disarmFirstPaint,
         persistFirstPaintColor,
-        persistFirstPaintSnapshot
+        persistFirstPaintSnapshot,
+        persistFirstPaintTarget
     };
 
     global[API_KEY] = api;

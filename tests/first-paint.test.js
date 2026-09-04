@@ -25,6 +25,7 @@ describe('first paint boot script', () => {
     });
 
     afterEach(() => {
+        document.getElementById('first-paint-overlay')?.remove();
     });
 
     it('arms first paint with stored color', async () => {
@@ -78,9 +79,10 @@ describe('first paint boot script', () => {
         expect(localStorage.getItem('aura:firstPaintColor')).toBe('#abcdef');
     });
 
-    it('uses the stored snapshot color without rendering the previous wallpaper', async () => {
+    it('renders the stored snapshot image on the first paint overlay', async () => {
         const snapshot = {
             v: 1,
+            backgroundId: 'background-1',
             color: '#224466',
             previewDataUrl: 'data:image/jpeg;base64,ZmFrZQ==',
             size: 'cover',
@@ -89,18 +91,22 @@ describe('first paint boot script', () => {
             ts: Date.now()
         };
         localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify(snapshot));
+        localStorage.setItem('aura:firstPaintTarget', 'background-1');
         localStorage.setItem('aura:firstPaintColor', '#ffffff');
 
         await loadFirstPaintScript();
 
         expect(document.documentElement.style.getPropertyValue('--solid-background')).toBe('#224466');
-        expect(document.getElementById('first-paint-overlay')).toBeNull();
+        const overlay = document.getElementById('first-paint-overlay');
+        expect(overlay).toBeTruthy();
+        expect(overlay.style.backgroundImage).toContain('data:image/jpeg;base64,ZmFrZQ==');
         expect(document.documentElement.style.backgroundImage).toBe('');
     });
 
-    it('does not create an overlay when the stored snapshot has an image', async () => {
+    it('does not render a stale snapshot for another background target', async () => {
         const snapshot = {
             v: 1,
+            backgroundId: 'old-background',
             color: '#334455',
             previewDataUrl: 'data:image/jpeg;base64,ZmFrZQ==',
             size: 'cover',
@@ -109,14 +115,16 @@ describe('first paint boot script', () => {
             ts: Date.now()
         };
         localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify(snapshot));
+        localStorage.setItem('aura:firstPaintTarget', 'new-background');
+        localStorage.setItem('aura:firstPaintColor', '#445566');
 
         await loadFirstPaintScript();
 
-        expect(document.documentElement.style.getPropertyValue('--solid-background')).toBe('#334455');
+        expect(document.documentElement.style.getPropertyValue('--solid-background')).toBe('#445566');
         expect(document.getElementById('first-paint-overlay')).toBeNull();
     });
 
-    it('disarmFirstPaint completes without scheduling a snapshot fade', async () => {
+    it('disarmFirstPaint removes the snapshot overlay without a fade', async () => {
         vi.useFakeTimers();
         const rafSpy = vi.spyOn(globalThis, 'requestAnimationFrame');
         localStorage.setItem('aura:firstPaintSnapshot', JSON.stringify({
@@ -143,6 +151,7 @@ describe('first paint boot script', () => {
     it('persistFirstPaintSnapshot persists snapshot and syncs first-paint color', async () => {
         const api = await loadFirstPaintScript();
         const ok = api.persistFirstPaintSnapshot({
+            backgroundId: 'background-1',
             color: '#556677',
             previewDataUrl: 'data:image/jpeg;base64,AAAA',
             size: 'cover',
@@ -157,6 +166,7 @@ describe('first paint boot script', () => {
         const rawSnapshot = localStorage.getItem('aura:firstPaintSnapshot');
         expect(rawSnapshot).toBeTruthy();
         const parsed = JSON.parse(rawSnapshot);
+        expect(parsed.backgroundId).toBe('background-1');
         expect(parsed.color).toBe('#556677');
         expect(parsed.previewDataUrl).toBe('data:image/jpeg;base64,AAAA');
     });
@@ -197,39 +207,93 @@ describe('background first-paint color persistence', () => {
 
     it('persists explicit color when payload color is available', () => {
         const persistSpy = vi.fn();
-        globalThis.__AURA_FIRST_PAINT__ = { persistFirstPaintColor: persistSpy };
-
-        const ctx = { wrapper: { dataset: { type: 'files' } } };
-        backgroundApplyMethods._emitBackgroundApplied.call(ctx, {
-            type: 'files',
-            element: null,
-            color: '  #aabbcc  '
-        });
-
-        expect(persistSpy).toHaveBeenCalledWith('#aabbcc');
-        expect(document.documentElement.style.getPropertyValue('--ct-wallpaper-color').trim()).toBe('#aabbcc');
-    });
-
-    it('persists first-paint snapshot when explicit color is available', async () => {
-        const persistColorSpy = vi.fn();
-        const persistSnapshotSpy = vi.fn();
+        const targetSpy = vi.fn();
         globalThis.__AURA_FIRST_PAINT__ = {
-            persistFirstPaintColor: persistColorSpy,
-            persistFirstPaintSnapshot: persistSnapshotSpy
+            persistFirstPaintColor: persistSpy,
+            persistFirstPaintTarget: targetSpy
         };
 
         const ctx = { wrapper: { dataset: { type: 'files' } } };
         backgroundApplyMethods._emitBackgroundApplied.call(ctx, {
             type: 'files',
+            background: { id: 'background-1' },
+            element: null,
+            color: '  #aabbcc  '
+        });
+
+        expect(targetSpy).toHaveBeenCalledWith('background-1');
+        expect(persistSpy).toHaveBeenCalledWith('#aabbcc');
+        expect(document.documentElement.style.getPropertyValue('--ct-wallpaper-color').trim()).toBe('#aabbcc');
+    });
+
+    it('clears the first-paint target for a pure-color background', () => {
+        const targetSpy = vi.fn();
+        globalThis.__AURA_FIRST_PAINT__ = {
+            persistFirstPaintTarget: targetSpy
+        };
+
+        const ctx = { wrapper: { dataset: { type: 'color' } } };
+        backgroundApplyMethods._emitBackgroundApplied.call(ctx, {
+            type: 'color',
+            background: null,
+            element: null,
+            color: '#ddeeff'
+        });
+
+        expect(targetSpy).toHaveBeenCalledWith(null);
+    });
+
+    it('persists a decoded preview immediately instead of waiting for idle image loading', async () => {
+        const persistSnapshotSpy = vi.fn();
+        globalThis.__AURA_FIRST_PAINT__ = {
+            persistFirstPaintSnapshot: persistSnapshotSpy,
+            persistFirstPaintTarget: vi.fn()
+        };
+
+        const ctx = { wrapper: { dataset: { type: 'files' } } };
+        backgroundApplyMethods._emitBackgroundApplied.call(ctx, {
+            type: 'files',
+            background: { id: 'background-2' },
+            element: null,
+            color: '#ccddee',
+            previewDataUrl: 'data:image/jpeg;base64,AAAA'
+        });
+
+        await vi.runAllTimersAsync();
+
+        expect(persistSnapshotSpy).toHaveBeenCalledTimes(1);
+        expect(persistSnapshotSpy.mock.calls[0][0]).toMatchObject({
+            backgroundId: 'background-2',
+            color: '#ccddee',
+            previewDataUrl: 'data:image/jpeg;base64,AAAA'
+        });
+    });
+
+    it('persists first-paint snapshot when explicit color is available', async () => {
+        const persistColorSpy = vi.fn();
+        const persistSnapshotSpy = vi.fn();
+        const targetSpy = vi.fn();
+        globalThis.__AURA_FIRST_PAINT__ = {
+            persistFirstPaintColor: persistColorSpy,
+            persistFirstPaintSnapshot: persistSnapshotSpy,
+            persistFirstPaintTarget: targetSpy
+        };
+
+        const ctx = { wrapper: { dataset: { type: 'files' } } };
+        backgroundApplyMethods._emitBackgroundApplied.call(ctx, {
+            type: 'files',
+            background: { id: 'background-1' },
             element: null,
             color: '#ccddee'
         });
 
         await vi.runAllTimersAsync();
 
+        expect(targetSpy).toHaveBeenCalledWith('background-1');
         expect(persistColorSpy).toHaveBeenCalledWith('#ccddee');
         expect(persistSnapshotSpy).toHaveBeenCalledTimes(1);
         const persistedSnapshot = persistSnapshotSpy.mock.calls[0][0];
+        expect(persistedSnapshot.backgroundId).toBe('background-1');
         expect(persistedSnapshot.color).toBe('#ccddee');
         expect(persistedSnapshot.previewDataUrl).toBeNull();
     });
