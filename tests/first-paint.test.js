@@ -300,6 +300,23 @@ describe('background first-paint color persistence', () => {
 });
 
 describe('newtab first paint markup', () => {
+    it('keeps the body transparent while the first-paint preview is armed', async () => {
+        const cssPath = path.join(process.cwd(), 'styles/bundle.css');
+        const css = await fs.readFile(cssPath, 'utf8');
+        const style = document.createElement('style');
+        style.textContent = css;
+        document.head.appendChild(style);
+
+        document.documentElement.dataset.firstPaint = 'armed';
+        document.body.style.setProperty('background-color', '#123456');
+
+        expect(getComputedStyle(document.body).backgroundColor).toBe('rgba(0, 0, 0, 0)');
+
+        style.remove();
+        document.body.style.removeProperty('background-color');
+        document.documentElement.removeAttribute('data-first-paint');
+    });
+
     it('body does not use inline background styles overriding persisted first-paint color', async () => {
         const filePath = path.join(process.cwd(), 'newtab.html');
         const html = await fs.readFile(filePath, 'utf8');

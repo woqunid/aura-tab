@@ -458,6 +458,13 @@ html {
     box-shadow: var(--shadow-focus);
 }
 
+/* The first-paint preview is mounted as a sibling before <body>. Keep the body
+   canvas transparent while it is armed; otherwise its solid fallback color
+   paints over the preview and causes a color flash before the real wallpaper. */
+html[data-first-paint='armed'] body {
+    background-color: transparent !important;
+}
+
 body {
     font-family: var(--font-system);
     font-size: var(--text-base);
